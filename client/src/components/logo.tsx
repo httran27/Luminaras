@@ -1,4 +1,4 @@
-import Image from "@/components/ui/image";
+import { Image } from "@/components/ui/image";
 
 export function Logo() {
   return (

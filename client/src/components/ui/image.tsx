@@ -19,4 +19,4 @@ const Image = forwardRef<HTMLImageElement, ImageProps>(
 );
 Image.displayName = "Image";
 
-export default Image;
+export { Image };
