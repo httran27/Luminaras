@@ -4,7 +4,7 @@ import { setupAuth } from "./auth";
 import { setupWebSocket } from "./ws";
 import { db } from "@db";
 import { users, matches, messages, achievements, groups, groupMembers, groupMessages } from "@db/schema";
-import { eq, and, desc, or } from "drizzle-orm";
+import { eq, and, desc, or, sql } from "drizzle-orm";
 
 export function registerRoutes(app: Express): Server {
   setupAuth(app);
@@ -173,7 +173,7 @@ export function registerRoutes(app: Express): Server {
         isPublic: groups.isPublic,
         gameCategory: groups.gameCategory,
         createdAt: groups.createdAt,
-        memberCount: db.fn.count(groupMembers.id).as("memberCount"),
+        memberCount: sql`count(${groupMembers.id})::int`,
       })
       .from(groups)
       .innerJoin(
