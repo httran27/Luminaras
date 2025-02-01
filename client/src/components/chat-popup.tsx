@@ -1,19 +1,76 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { MessageSquare, X, Send } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { useQuery } from "@tanstack/react-query";
+
+interface Message {
+  id?: number;
+  senderId: number;
+  content: string;
+  createdAt?: string;
+}
+
+interface Conversation {
+  id: number;
+  username: string;
+  displayName: string | null;
+  lastMessage?: string;
+}
 
 export function ChatPopup() {
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
-  const [activeChat, setActiveChat] = useState<string | null>(null);
+  const [activeChat, setActiveChat] = useState<Conversation | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputMessage, setInputMessage] = useState("");
+  const wsRef = useRef<WebSocket | null>(null);
 
-  // Placeholder data - will be replaced with actual data from backend
-  const conversations = [
-    { id: '1', username: 'Player1', lastMessage: 'Hey! Want to play together?' },
-    { id: '2', username: 'Player2', lastMessage: 'GG!' },
-  ];
+  const { data: conversations } = useQuery<Conversation[]>({
+    queryKey: ["/api/messages/conversations"],
+    enabled: isOpen && !!user,
+  });
+
+  useEffect(() => {
+    if (!user || !isOpen) return;
+
+    // Initialize WebSocket connection
+    const ws = new WebSocket(`${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws?userId=${user.id}`);
+    wsRef.current = ws;
+
+    ws.onmessage = (event) => {
+      const message = JSON.parse(event.data);
+      if (message.senderId === activeChat?.id) {
+        setMessages(prev => [...prev, message]);
+      }
+    };
+
+    return () => {
+      ws.close();
+    };
+  }, [user, isOpen, activeChat]);
+
+  const sendMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inputMessage.trim() || !activeChat || !wsRef.current) return;
+
+    const message = {
+      type: "message",
+      senderId: user!.id,
+      receiverId: activeChat.id,
+      content: inputMessage.trim(),
+      createdAt: new Date().toISOString(),
+    };
+
+    wsRef.current.send(JSON.stringify(message));
+    setMessages(prev => [...prev, message]);
+    setInputMessage("");
+  };
+
+  if (!user) return null;
 
   return (
     <div className="fixed bottom-4 right-4 z-50">
@@ -29,7 +86,7 @@ export function ChatPopup() {
               <X className="h-4 w-4" />
             </Button>
           </div>
-          
+
           <ScrollArea className="h-96">
             {activeChat ? (
               <div className="flex flex-col h-full">
@@ -41,15 +98,39 @@ export function ChatPopup() {
                   >
                     Back
                   </Button>
-                  <span className="font-medium">Chat with {activeChat}</span>
+                  <span className="font-medium">
+                    {activeChat.displayName ?? activeChat.username}
+                  </span>
                 </div>
-                <div className="flex-1 p-3">
-                  {/* Chat messages will go here */}
-                </div>
+                <ScrollArea className="flex-1 p-3">
+                  <div className="space-y-4">
+                    {messages.map((msg, idx) => (
+                      <div
+                        key={idx}
+                        className={`flex ${msg.senderId === user.id ? 'justify-end' : 'justify-start'}`}
+                      >
+                        <div
+                          className={`rounded-lg px-3 py-2 max-w-[80%] ${
+                            msg.senderId === user.id
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-muted'
+                          }`}
+                        >
+                          {msg.content}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
                 <div className="p-3 border-t">
-                  <form className="flex gap-2" onSubmit={(e) => e.preventDefault()}>
-                    <Input placeholder="Type a message..." className="flex-1" />
-                    <Button size="icon">
+                  <form className="flex gap-2" onSubmit={sendMessage}>
+                    <Input
+                      placeholder="Type a message..."
+                      className="flex-1"
+                      value={inputMessage}
+                      onChange={(e) => setInputMessage(e.target.value)}
+                    />
+                    <Button type="submit" size="icon">
                       <Send className="h-4 w-4" />
                     </Button>
                   </form>
@@ -57,18 +138,22 @@ export function ChatPopup() {
               </div>
             ) : (
               <div className="p-3">
-                {conversations.map((conv) => (
+                {conversations?.map((conv) => (
                   <Button
                     key={conv.id}
                     variant="ghost"
                     className="w-full justify-start mb-2"
-                    onClick={() => setActiveChat(conv.username)}
+                    onClick={() => setActiveChat(conv)}
                   >
                     <div className="text-left">
-                      <div className="font-medium">{conv.username}</div>
-                      <div className="text-sm text-muted-foreground truncate">
-                        {conv.lastMessage}
+                      <div className="font-medium">
+                        {conv.displayName ?? conv.username}
                       </div>
+                      {conv.lastMessage && (
+                        <div className="text-sm text-muted-foreground truncate">
+                          {conv.lastMessage}
+                        </div>
+                      )}
                     </div>
                   </Button>
                 ))}
