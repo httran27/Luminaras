@@ -37,7 +37,7 @@ export function registerRoutes(app: Express): Server {
     res.json(user);
   });
 
-  // Match routes
+  // Match routes - Find only users
   app.get("/api/matches/potential", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
 
@@ -45,8 +45,14 @@ export function registerRoutes(app: Express): Server {
       .select()
       .from(users)
       .where(
-        eq(users.id, req.user.id).not
+        sql`${users.id} != ${req.user.id} 
+          AND NOT EXISTS (
+            SELECT 1 FROM ${matches}
+            WHERE (${matches.userId1} = ${req.user.id} AND ${matches.userId2} = ${users.id})
+            OR (${matches.userId1} = ${users.id} AND ${matches.userId2} = ${req.user.id})
+          )`
       )
+      .orderBy(sql`RANDOM()`)
       .limit(10);
 
     res.json(potentialMatches);

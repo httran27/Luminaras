@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
 import type { SelectUser } from "@db/schema";
+import { Gamepad } from "lucide-react";
 
 interface MatchCardProps {
   user: SelectUser;
@@ -21,39 +22,56 @@ export function MatchCard({ user, onSwipe }: MatchCardProps) {
         else if (swipe > 20) onSwipe("right");
       }}
       className="cursor-grab active:cursor-grabbing"
+      whileDrag={{ scale: 1.05 }}
+      animate={{ scale: 1 }}
+      transition={{ type: "spring", stiffness: 300, damping: 20 }}
     >
       <Card className="w-80 bg-card">
         <CardContent className="p-6">
           <div className="flex flex-col items-center gap-4">
-            <Avatar className="h-24 w-24">
-              <AvatarImage src={user.avatar} />
+            <Avatar className="h-24 w-24 border-2 border-primary/20">
+              <AvatarImage src={user.avatar || undefined} />
               <AvatarFallback>
-                {user.displayName?.[0] ?? user.username[0]}
+                {user.displayName?.[0]?.toUpperCase() ?? user.username[0].toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            
-            <div className="text-center">
-              <h3 className="text-xl font-semibold">{user.displayName ?? user.username}</h3>
-              <p className="text-sm text-muted-foreground">{user.bio}</p>
+
+            <div className="text-center space-y-2">
+              <h3 className="text-xl font-semibold">
+                {user.displayName ?? user.username}
+              </h3>
+              {user.gamerType && (
+                <Badge variant="secondary" className="mb-2">
+                  <Gamepad className="w-3 h-3 mr-1" />
+                  {user.gamerType}
+                </Badge>
+              )}
+              <p className="text-sm text-muted-foreground">
+                {user.bio || "No bio available"}
+              </p>
             </div>
 
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 justify-center">
               {user.gameInterests?.map((game) => (
-                <Badge key={game} variant="secondary">
+                <Badge key={game} variant="outline">
                   {game}
                 </Badge>
               ))}
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex gap-2 pt-4">
               <Button 
                 variant="destructive"
+                size="lg"
                 onClick={() => onSwipe("left")}
+                className="shadow-lg hover:shadow-xl transition-shadow"
               >
                 Pass
               </Button>
               <Button 
+                size="lg"
                 onClick={() => onSwipe("right")}
+                className="shadow-lg hover:shadow-xl transition-shadow"
               >
                 Connect
               </Button>
