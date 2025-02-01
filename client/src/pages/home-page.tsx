@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Users2, GamepadIcon, Headphones, Sparkles } from "lucide-react";
+import { Users2, NewspaperIcon, UsersIcon, Sparkles } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
@@ -9,7 +9,7 @@ export default function HomePage() {
   const { user } = useAuth();
 
   return (
-    <div className="space-y-12 relative">
+    <div className="space-y-16 relative">
       {/* Pixel Art Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-10 left-10 w-4 h-4 bg-primary/20 rotate-45" />
@@ -19,30 +19,26 @@ export default function HomePage() {
       </div>
 
       {/* Hero Section */}
-      <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
-        <div className="flex-1 text-center lg:text-left space-y-4">
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
+      <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
+        <div className="flex-1 text-center lg:text-left space-y-6">
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight leading-tight">
             Connect and Empower Women Gamers
           </h1>
-          <p className="text-xl text-muted-foreground">
+          <p className="text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto lg:mx-0">
             Join our vibrant community where women gamers unite, share experiences,
             and find their perfect gaming companions.
           </p>
           {!user ? (
             <Link href="/auth">
-              <a>
-                <Button size="lg" className="px-8">
-                  Join Luminaras
-                </Button>
-              </a>
+              <Button size="lg" className="px-8">
+                Join Luminaras
+              </Button>
             </Link>
           ) : (
             <Link href="/matches">
-              <a>
-                <Button size="lg" className="px-8">
-                  Find Gaming Friends
-                </Button>
-              </a>
+              <Button size="lg" className="px-8">
+                Find Gaming Friends
+              </Button>
             </Link>
           )}
         </div>
@@ -52,48 +48,48 @@ export default function HomePage() {
       </div>
 
       {/* Features Grid */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
         <Card className="group bg-gradient-to-br from-purple-50 to-pink-50 hover:shadow-lg transition-all border-2 border-transparent hover:border-primary/20">
-          <CardContent className="p-6 space-y-2">
+          <CardContent className="p-6 space-y-4">
             <div className="relative">
               <div className="w-16 h-16 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                 <Users2 className="h-8 w-8 text-primary transition-transform group-hover:scale-110" />
                 <Sparkles className="h-4 w-4 text-yellow-500 absolute -right-1 -top-1" />
               </div>
             </div>
-            <h3 className="text-lg font-semibold font-pixel">Quick Match</h3>
-            <p className="text-muted-foreground">
-              Find gaming friends who share your interests and play style.
+            <h3 className="text-lg font-semibold">Quick Match</h3>
+            <p className="text-muted-foreground leading-relaxed">
+              Connect with fellow gamers who share your interests and play style. Our matching system helps you find the perfect gaming companions.
             </p>
           </CardContent>
         </Card>
 
         <Card className="group bg-gradient-to-br from-purple-50 to-pink-50 hover:shadow-lg transition-all border-2 border-transparent hover:border-primary/20">
-          <CardContent className="p-6 space-y-2">
+          <CardContent className="p-6 space-y-4">
             <div className="relative">
               <div className="w-16 h-16 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                <GamepadIcon className="h-8 w-8 text-primary transition-transform group-hover:scale-110" />
+                <NewspaperIcon className="h-8 w-8 text-primary transition-transform group-hover:scale-110" />
                 <Sparkles className="h-4 w-4 text-yellow-500 absolute -right-1 -top-1" />
               </div>
             </div>
-            <h3 className="text-lg font-semibold font-pixel">Game Categories</h3>
-            <p className="text-muted-foreground">
-              From cozy games to FPS, find your perfect gaming niche.
+            <h3 className="text-lg font-semibold">Gaming News</h3>
+            <p className="text-muted-foreground leading-relaxed">
+              Stay updated with the latest gaming news, upcoming releases, and community events. Never miss out on what's happening in the gaming world.
             </p>
           </CardContent>
         </Card>
 
         <Card className="group bg-gradient-to-br from-purple-50 to-pink-50 hover:shadow-lg transition-all border-2 border-transparent hover:border-primary/20">
-          <CardContent className="p-6 space-y-2">
+          <CardContent className="p-6 space-y-4">
             <div className="relative">
               <div className="w-16 h-16 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                <Headphones className="h-8 w-8 text-primary transition-transform group-hover:scale-110" />
+                <UsersIcon className="h-8 w-8 text-primary transition-transform group-hover:scale-110" />
                 <Sparkles className="h-4 w-4 text-yellow-500 absolute -right-1 -top-1" />
               </div>
             </div>
-            <h3 className="text-lg font-semibold font-pixel">Voice Chat</h3>
-            <p className="text-muted-foreground">
-              Connect with voice chat in a safe, moderated environment.
+            <h3 className="text-lg font-semibold">Gaming Groups</h3>
+            <p className="text-muted-foreground leading-relaxed">
+              Join or create gaming groups based on your favorite games. Build lasting friendships and find your gaming community.
             </p>
           </CardContent>
         </Card>

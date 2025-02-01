@@ -23,11 +23,6 @@ export default function Navbar() {
               Quick Match
             </a>
           </Link>
-          <Link href="/messages">
-            <a className="text-sm font-medium transition-colors hover:text-primary">
-              Messages
-            </a>
-          </Link>
           <Link href="/groups">
             <a className="text-sm font-medium transition-colors hover:text-primary">
               Groups
