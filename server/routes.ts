@@ -91,14 +91,28 @@ export function registerRoutes(app: Express): Server {
     if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
 
     const conversations = await db
-      .select()
+      .select({
+        id: users.id,
+        username: users.username,
+        displayName: users.displayName,
+        avatar: users.avatar,
+        gamerType: users.gamerType
+      })
       .from(users)
-      .where(
+      .innerJoin(
+        messages,
         or(
-          eq(messages.senderId, req.user.id),
-          eq(messages.receiverId, req.user.id)
+          and(
+            eq(messages.senderId, req.user.id),
+            eq(messages.receiverId, users.id)
+          ),
+          and(
+            eq(messages.receiverId, req.user.id),
+            eq(messages.senderId, users.id)
+          )
         )
       )
+      .groupBy(users.id)
       .limit(50);
 
     res.json(conversations);
