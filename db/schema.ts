@@ -11,12 +11,17 @@ export const users = pgTable("users", {
   background: text("background"),
   bio: text("bio"),
   gamerType: text("gamer_type"),
+  gamingLevel: text("gaming_level"),
+  isContentCreator: boolean("is_content_creator").default(false),
   socialLinks: jsonb("social_links").$type<{
     twitter?: string;
     twitch?: string;
     discord?: string;
+    instagram?: string;
+    spotify?: string;
   }>(),
   gameInterests: text("game_interests").array(),
+  musicGenres: text("music_genres").array(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

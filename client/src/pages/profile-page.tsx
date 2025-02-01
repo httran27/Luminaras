@@ -26,6 +26,22 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 
+interface UpdateProfileData {
+  displayName?: string;
+  bio?: string;
+  gamingLevel?: string;
+  gameInterests?: string[];
+  musicGenres?: string[];
+  isContentCreator?: boolean;
+  socialLinks?: {
+    twitter?: string;
+    twitch?: string;
+    discord?: string;
+    instagram?: string;
+    spotify?: string;
+  };
+}
+
 export default function ProfilePage() {
   const { id } = useParams();
   const { user: currentUser } = useAuth();
@@ -37,7 +53,7 @@ export default function ProfilePage() {
   });
 
   const updateProfileMutation = useMutation({
-    mutationFn: async (data: Partial<SelectUser>) => {
+    mutationFn: async (data: UpdateProfileData) => {
       const res = await apiRequest("PATCH", `/api/users/${id}`, data);
       return res.json();
     },
@@ -53,6 +69,26 @@ export default function ProfilePage() {
 
   if (!user) return null;
   const isOwnProfile = currentUser?.id === user.id;
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const data: UpdateProfileData = {
+      displayName: formData.get('displayName') as string || undefined,
+      bio: formData.get('bio') as string || undefined,
+      gamingLevel: formData.get('gamingLevel') as string || undefined,
+      gameInterests: formData.get('gameInterests')?.toString().split(',').map(s => s.trim()) || undefined,
+      musicGenres: formData.get('musicGenres')?.toString().split(',').map(s => s.trim()) || undefined,
+      isContentCreator: formData.get('isContentCreator') === 'on',
+      socialLinks: {
+        twitter: formData.get('twitterLink') as string || undefined,
+        twitch: formData.get('twitchLink') as string || undefined,
+        instagram: formData.get('instagramLink') as string || undefined,
+        spotify: formData.get('spotifyLink') as string || undefined,
+      }
+    };
+    updateProfileMutation.mutate(data);
+  };
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
@@ -73,31 +109,11 @@ export default function ProfilePage() {
                   {user.displayName?.[0] ?? user.username[0]}
                 </AvatarFallback>
               </Avatar>
-              {isEditing && (
-                <Input
-                  type="file"
-                  className="hidden"
-                  id="avatar-upload"
-                  accept="image/*"
-                  onChange={(e) => {
-                    // Handle file upload logic here
-                  }}
-                />
-              )}
             </div>
 
             <div className="flex-1 space-y-4">
               {isEditing ? (
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    const formData = new FormData(e.currentTarget);
-                    const data = Object.fromEntries(formData);
-                    data.isContentCreator = formData.get('isContentCreator') === 'on';
-                    updateProfileMutation.mutate(data);
-                  }}
-                  className="space-y-4"
-                >
+                <form onSubmit={handleSubmit} className="space-y-4">
                   <Input
                     name="displayName"
                     defaultValue={user.displayName ?? ""}
@@ -110,7 +126,6 @@ export default function ProfilePage() {
                     className="min-h-[100px]"
                   />
 
-                  {/* Gaming Preferences */}
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Gaming Level</label>
                     <Select name="gamingLevel" defaultValue={user.gamingLevel ?? "casual"}>
@@ -125,19 +140,17 @@ export default function ProfilePage() {
                     </Select>
                   </div>
 
-                  {/* Game Interests */}
                   <Input
                     name="gameInterests"
                     defaultValue={user.gameInterests?.join(", ") ?? ""}
                     placeholder="Game interests (comma-separated)"
                   />
 
-                  {/* Music Preferences */}
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Music Preferences</label>
                     <Input
                       name="spotifyLink"
-                      defaultValue={user.spotifyLink ?? ""}
+                      defaultValue={user.socialLinks?.spotify ?? ""}
                       placeholder="Spotify Profile Link"
                     />
                     <Input
@@ -147,32 +160,30 @@ export default function ProfilePage() {
                     />
                   </div>
 
-                  {/* Social Media Links */}
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Social Media</label>
                     <Input
                       name="twitterLink"
-                      defaultValue={user.twitterLink ?? ""}
+                      defaultValue={user.socialLinks?.twitter ?? ""}
                       placeholder="Twitter Profile"
                     />
                     <Input
                       name="instagramLink"
-                      defaultValue={user.instagramLink ?? ""}
+                      defaultValue={user.socialLinks?.instagram ?? ""}
                       placeholder="Instagram Profile"
                     />
                     <Input
                       name="twitchLink"
-                      defaultValue={user.twitchLink ?? ""}
+                      defaultValue={user.socialLinks?.twitch ?? ""}
                       placeholder="Twitch Channel"
                     />
                   </div>
 
-                  {/* Content Creator Checkbox */}
                   <div className="flex items-center space-x-2">
                     <Checkbox
                       id="isContentCreator"
                       name="isContentCreator"
-                      defaultChecked={user.isContentCreator}
+                      defaultChecked={user.isContentCreator || false}
                     />
                     <label
                       htmlFor="isContentCreator"
@@ -183,7 +194,12 @@ export default function ProfilePage() {
                   </div>
 
                   <div className="flex gap-2">
-                    <Button type="submit">Save Changes</Button>
+                    <Button 
+                      type="submit"
+                      disabled={updateProfileMutation.isPending}
+                    >
+                      Save Changes
+                    </Button>
                     <Button
                       type="button"
                       variant="outline"
@@ -209,13 +225,12 @@ export default function ProfilePage() {
                       <p className="text-muted-foreground">{user.bio}</p>
                     </div>
 
-                    {/* Gaming Section */}
                     <div className="space-y-2">
                       <h3 className="font-semibold flex items-center gap-2">
                         <Gamepad className="h-4 w-4" />
                         Gaming
                       </h3>
-                      <p className="text-sm">Level: {user.gamingLevel}</p>
+                      <p className="text-sm">Level: {user.gamingLevel || "Not specified"}</p>
                       <div className="flex flex-wrap gap-2">
                         {user.gameInterests?.map((game) => (
                           <Badge key={game} variant="secondary">
@@ -225,8 +240,7 @@ export default function ProfilePage() {
                       </div>
                     </div>
 
-                    {/* Music Section */}
-                    {(user.spotifyLink || user.musicGenres?.length > 0) && (
+                    {(user.socialLinks?.spotify || (user.musicGenres && user.musicGenres.length > 0)) && (
                       <div className="space-y-2">
                         <h3 className="font-semibold flex items-center gap-2">
                           <Music className="h-4 w-4" />
@@ -237,9 +251,9 @@ export default function ProfilePage() {
                             {genre}
                           </Badge>
                         ))}
-                        {user.spotifyLink && (
+                        {user.socialLinks?.spotify && (
                           <a
-                            href={user.spotifyLink}
+                            href={user.socialLinks.spotify}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-sm text-primary hover:underline block"
@@ -250,17 +264,16 @@ export default function ProfilePage() {
                       </div>
                     )}
 
-                    {/* Social Links */}
-                    {(user.twitterLink || user.instagramLink || user.twitchLink) && (
+                    {(user.socialLinks?.twitter || user.socialLinks?.instagram || user.socialLinks?.twitch) && (
                       <div className="space-y-2">
                         <h3 className="font-semibold flex items-center gap-2">
                           <LinkIcon className="h-4 w-4" />
                           Social Links
                         </h3>
                         <div className="flex gap-4">
-                          {user.twitterLink && (
+                          {user.socialLinks.twitter && (
                             <a
-                              href={user.twitterLink}
+                              href={user.socialLinks.twitter}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-sm text-primary hover:underline"
@@ -268,9 +281,9 @@ export default function ProfilePage() {
                               Twitter
                             </a>
                           )}
-                          {user.instagramLink && (
+                          {user.socialLinks.instagram && (
                             <a
-                              href={user.instagramLink}
+                              href={user.socialLinks.instagram}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-sm text-primary hover:underline"
@@ -278,9 +291,9 @@ export default function ProfilePage() {
                               Instagram
                             </a>
                           )}
-                          {user.twitchLink && (
+                          {user.socialLinks.twitch && (
                             <a
-                              href={user.twitchLink}
+                              href={user.socialLinks.twitch}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-sm text-primary hover:underline"
