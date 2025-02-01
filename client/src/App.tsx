@@ -11,6 +11,7 @@ import ProfilePage from "@/pages/profile-page";
 import MatchesPage from "@/pages/matches-page";
 import MessagesPage from "@/pages/messages-page";
 import NewsPage from "@/pages/news-page";
+import GroupsPage from "@/pages/groups-page";
 import Navbar from "@/components/navbar";
 
 function Router() {
@@ -24,6 +25,7 @@ function Router() {
           <ProtectedRoute path="/profile/:id" component={ProfilePage} />
           <ProtectedRoute path="/matches" component={MatchesPage} />
           <ProtectedRoute path="/messages" component={MessagesPage} />
+          <ProtectedRoute path="/groups" component={GroupsPage} />
           <ProtectedRoute path="/news" component={NewsPage} />
           <Route component={NotFound} />
         </Switch>

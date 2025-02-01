@@ -16,7 +16,7 @@ export default function Navbar() {
             <Logo />
           </a>
         </Link>
-        
+
         <div className="flex gap-6 flex-1">
           <Link href="/matches">
             <a className="text-sm font-medium transition-colors hover:text-primary">
@@ -26,6 +26,11 @@ export default function Navbar() {
           <Link href="/messages">
             <a className="text-sm font-medium transition-colors hover:text-primary">
               Messages
+            </a>
+          </Link>
+          <Link href="/groups">
+            <a className="text-sm font-medium transition-colors hover:text-primary">
+              Groups
             </a>
           </Link>
           <Link href="/news">

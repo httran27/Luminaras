@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { setupWebSocket } from "./ws";
 import { db } from "@db";
-import { users, matches, messages, achievements } from "@db/schema";
+import { users, matches, messages, achievements, groups, groupMembers, groupMessages } from "@db/schema";
 import { eq, and, desc, or } from "drizzle-orm";
 
 export function registerRoutes(app: Express): Server {
@@ -136,6 +136,147 @@ export function registerRoutes(app: Express): Server {
       .orderBy(desc(achievements.createdAt));
 
     res.json(userAchievements);
+  });
+
+    // Group routes
+  app.post("/api/groups", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+
+    const [group] = await db
+      .insert(groups)
+      .values({
+        ...req.body,
+        createdById: req.user.id,
+      })
+      .returning();
+
+    // Add creator as a member with 'admin' role
+    await db.insert(groupMembers).values({
+      groupId: group.id,
+      userId: req.user.id,
+      role: "admin",
+    });
+
+    res.json(group);
+  });
+
+  app.get("/api/groups", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+
+    const userGroups = await db
+      .select({
+        id: groups.id,
+        name: groups.name,
+        description: groups.description,
+        avatar: groups.avatar,
+        background: groups.background,
+        isPublic: groups.isPublic,
+        gameCategory: groups.gameCategory,
+        createdAt: groups.createdAt,
+        memberCount: db.fn.count(groupMembers.id).as("memberCount"),
+      })
+      .from(groups)
+      .innerJoin(
+        groupMembers,
+        and(
+          eq(groupMembers.groupId, groups.id),
+          eq(groupMembers.userId, req.user.id)
+        )
+      )
+      .groupBy(groups.id)
+      .orderBy(desc(groups.createdAt));
+
+    res.json(userGroups);
+  });
+
+  app.get("/api/groups/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+
+    const [group] = await db
+      .select()
+      .from(groups)
+      .where(eq(groups.id, parseInt(req.params.id)));
+
+    if (!group) return res.status(404).send("Group not found");
+
+    const members = await db
+      .select({
+        id: users.id,
+        username: users.username,
+        displayName: users.displayName,
+        avatar: users.avatar,
+        role: groupMembers.role,
+      })
+      .from(groupMembers)
+      .innerJoin(users, eq(users.id, groupMembers.userId))
+      .where(eq(groupMembers.groupId, group.id));
+
+    res.json({ ...group, members });
+  });
+
+  app.post("/api/groups/:id/messages", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+
+    const groupId = parseInt(req.params.id);
+    const [member] = await db
+      .select()
+      .from(groupMembers)
+      .where(
+        and(
+          eq(groupMembers.groupId, groupId),
+          eq(groupMembers.userId, req.user.id)
+        )
+      );
+
+    if (!member) return res.status(403).send("Not a member of this group");
+
+    const [message] = await db
+      .insert(groupMessages)
+      .values({
+        groupId,
+        senderId: req.user.id,
+        content: req.body.content,
+      })
+      .returning();
+
+    res.json(message);
+  });
+
+  app.get("/api/groups/:id/messages", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+
+    const groupId = parseInt(req.params.id);
+    const [member] = await db
+      .select()
+      .from(groupMembers)
+      .where(
+        and(
+          eq(groupMembers.groupId, groupId),
+          eq(groupMembers.userId, req.user.id)
+        )
+      );
+
+    if (!member) return res.status(403).send("Not a member of this group");
+
+    const messages = await db
+      .select({
+        id: groupMessages.id,
+        content: groupMessages.content,
+        createdAt: groupMessages.createdAt,
+        sender: {
+          id: users.id,
+          username: users.username,
+          displayName: users.displayName,
+          avatar: users.avatar,
+        },
+      })
+      .from(groupMessages)
+      .innerJoin(users, eq(users.id, groupMessages.senderId))
+      .where(eq(groupMessages.groupId, groupId))
+      .orderBy(desc(groupMessages.createdAt))
+      .limit(50);
+
+    res.json(messages);
   });
 
   // News routes (mock data for now)
