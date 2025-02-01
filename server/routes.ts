@@ -45,10 +45,7 @@ export function registerRoutes(app: Express): Server {
       .select()
       .from(users)
       .where(
-        and(
-          eq(users.id, req.user.id).not(),
-          // Add more matching criteria here
-        )
+        eq(users.id, req.user.id).not
       )
       .limit(10);
 
@@ -90,6 +87,7 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/messages/conversations", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
 
+    // Simplified query to get all users who have messaged with the current user
     const conversations = await db
       .select({
         id: users.id,
@@ -98,20 +96,15 @@ export function registerRoutes(app: Express): Server {
         avatar: users.avatar,
         gamerType: users.gamerType
       })
-      .from(users)
-      .innerJoin(
-        messages,
-        or(
-          and(
-            eq(messages.senderId, req.user.id),
-            eq(messages.receiverId, users.id)
-          ),
-          and(
-            eq(messages.receiverId, req.user.id),
-            eq(messages.senderId, users.id)
-          )
-        )
-      )
+      .from(messages)
+      .where(or(
+        eq(messages.senderId, req.user.id),
+        eq(messages.receiverId, req.user.id)
+      ))
+      .innerJoin(users, or(
+        eq(users.id, messages.senderId),
+        eq(users.id, messages.receiverId)
+      ))
       .groupBy(users.id)
       .limit(50);
 
