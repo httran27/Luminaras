@@ -117,10 +117,15 @@ export function registerRoutes(app: Express): Server {
   });
 
   app.get("/api/achievements/:userId", async (req, res) => {
+    const userId = parseInt(req.params.userId);
+    if (isNaN(userId)) {
+      return res.status(400).send("Invalid user ID");
+    }
+
     const userAchievements = await db
       .select()
       .from(achievements)
-      .where(eq(achievements.userId, parseInt(req.params.userId)))
+      .where(eq(achievements.userId, userId))
       .orderBy(desc(achievements.createdAt));
 
     res.json(userAchievements);
