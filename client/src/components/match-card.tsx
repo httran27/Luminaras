@@ -2,7 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { motion } from "framer-motion";
+import { motion, useMotionValue, useTransform } from "framer-motion";
 import type { SelectUser } from "@db/schema";
 import { Gamepad } from "lucide-react";
 
@@ -12,21 +12,38 @@ interface MatchCardProps {
 }
 
 export function MatchCard({ user, onSwipe }: MatchCardProps) {
+  const x = useMotionValue(0);
+  const rotate = useTransform(x, [-200, 200], [-30, 30]);
+  const opacity = useTransform(
+    x,
+    [-200, -100, 0, 100, 200],
+    [0.5, 1, 1, 1, 0.5]
+  );
+
   return (
     <motion.div
+      style={{ x, rotate, opacity }}
       drag="x"
-      dragConstraints={{ left: 0, right: 0 }}
-      onDragEnd={(e, { offset, velocity }) => {
-        const swipe = Math.abs(velocity.x) * offset.x;
-        if (swipe < -20) onSwipe("left");
-        else if (swipe > 20) onSwipe("right");
+      dragConstraints={{ left: -1000, right: 1000 }}
+      onDragEnd={(event, { offset, velocity }) => {
+        const swipe = offset.x + velocity.x;
+        if (Math.abs(swipe) > 100) {
+          onSwipe(swipe > 0 ? "right" : "left");
+        }
       }}
-      className="cursor-grab active:cursor-grabbing"
+      className="cursor-grab active:cursor-grabbing absolute w-full"
+      whileTap={{ cursor: "grabbing" }}
+      initial={{ scale: 1 }}
       whileDrag={{ scale: 1.05 }}
-      animate={{ scale: 1 }}
-      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+      animate={{ scale: 1, x: 0 }}
+      transition={{
+        type: "spring",
+        stiffness: 300,
+        damping: 20,
+        mass: 0.5
+      }}
     >
-      <Card className="w-80 bg-card">
+      <Card className="w-80 bg-card mx-auto">
         <CardContent className="p-6">
           <div className="flex flex-col items-center gap-4">
             <Avatar className="h-24 w-24 border-2 border-primary/20">
