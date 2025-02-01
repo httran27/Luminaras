@@ -9,11 +9,11 @@ import AuthPage from "@/pages/auth-page";
 import HomePage from "@/pages/home-page";
 import ProfilePage from "@/pages/profile-page";
 import MatchesPage from "@/pages/matches-page";
-import MessagesPage from "@/pages/messages-page";
 import NewsPage from "@/pages/news-page";
 import GroupsPage from "@/pages/groups-page";
 import GroupPage from "@/pages/group-page";
 import Navbar from "@/components/navbar";
+import { ChatPopup } from "@/components/chat-popup";
 
 function Router() {
   return (
@@ -21,17 +21,17 @@ function Router() {
       <Navbar />
       <main className="container mx-auto px-4 py-8">
         <Switch>
-          <ProtectedRoute path="/" component={HomePage} />
+          <Route path="/" component={HomePage} />
           <Route path="/auth" component={AuthPage} />
           <ProtectedRoute path="/profile/:id" component={ProfilePage} />
           <ProtectedRoute path="/matches" component={MatchesPage} />
-          <ProtectedRoute path="/messages" component={MessagesPage} />
           <ProtectedRoute path="/groups" component={GroupsPage} />
           <ProtectedRoute path="/groups/:id" component={GroupPage} />
           <ProtectedRoute path="/news" component={NewsPage} />
           <Route component={NotFound} />
         </Switch>
       </main>
+      <ChatPopup />
     </div>
   );
 }
