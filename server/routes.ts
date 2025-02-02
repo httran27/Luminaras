@@ -99,7 +99,7 @@ export function registerRoutes(app: Express): Server {
       .where(
         or(
           sql`LOWER(${users.username}) LIKE ${`%${query.toLowerCase()}%`}`,
-          sql`LOWER(${users.displayName}) LIKE ${`%${query.toLowerCase()}%`}`
+          sql`LOWER(COALESCE(${users.displayName}, '')) LIKE ${`%${query.toLowerCase()}%`}`
         )
       )
       .limit(10);
