@@ -51,16 +51,24 @@ export default function Navbar() {
 
   const handleSearchSubmit = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && search.length >= 3) {
-      const results = await refetch();
-      if (results.data && results.data.length > 0) {
-        // Navigate to the first user's profile
-        setOpen(false);
-        setLocation(`/profile/${results.data[0].id}`);
-        setSearch(''); // Clear search after navigation
-      } else {
+      try {
+        const results = await refetch();
+        if (results.data && Array.isArray(results.data) && results.data.length > 0) {
+          // Navigate to the first user's profile
+          setOpen(false);
+          setLocation(`/profile/${results.data[0].id}`);
+          setSearch(''); // Clear search after navigation
+        } else {
+          toast({
+            title: "No users found",
+            description: `No users found matching "${search}"`,
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
         toast({
-          title: "No users found",
-          description: "No users match your search criteria.",
+          title: "Search failed",
+          description: "An error occurred while searching for users.",
           variant: "destructive",
         });
       }
