@@ -33,7 +33,7 @@ export function MatchCard({ user, onSwipe }: MatchCardProps) {
           onSwipe(swipe > 0 ? "right" : "left");
         }
       }}
-      className="cursor-grab active:cursor-grabbing absolute w-full perspective-1000"
+      className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[320px] perspective-1000"
       whileTap={{ cursor: "grabbing" }}
       initial={{ scale: 1 }}
       whileDrag={{ scale: 1.05 }}
@@ -51,7 +51,8 @@ export function MatchCard({ user, onSwipe }: MatchCardProps) {
         }`}
         onClick={() => setIsFlipped(!isFlipped)}
       >
-        <Card className="w-80 bg-card mx-auto backface-hidden">
+        {/* Front of card */}
+        <Card className="w-full bg-card backface-hidden">
           <CardContent className="p-6">
             <div className="flex flex-col items-center gap-4">
               <Avatar className="h-24 w-24 border-2 border-primary/20">
@@ -84,7 +85,8 @@ export function MatchCard({ user, onSwipe }: MatchCardProps) {
           </CardContent>
         </Card>
 
-        <Card className="w-80 bg-card mx-auto backface-hidden absolute inset-0 rotate-y-180">
+        {/* Back of card */}
+        <Card className="w-full bg-card backface-hidden absolute inset-0 rotate-y-180">
           <CardContent className="p-6">
             <div className="flex flex-col gap-4">
               <div className="space-y-4">
@@ -136,7 +138,7 @@ export function MatchCard({ user, onSwipe }: MatchCardProps) {
         </Card>
       </div>
 
-      <div className="flex gap-2 pt-4 mt-4">
+      <div className="flex gap-2 pt-4 mt-4 justify-center">
         <Button 
           variant="destructive"
           size="lg"

@@ -72,13 +72,15 @@ export default function MatchesPage() {
         </p>
       </div>
 
-      <div className="relative w-full h-[450px]">
+      <div className="relative w-full h-[550px]">
         {potentialMatches.map((match, index) => (
           <div
             key={match.id}
-            className="absolute left-1/2 -translate-x-1/2 top-0"
             style={{
               zIndex: potentialMatches.length - index,
+              position: 'absolute',
+              width: '100%',
+              top: 0,
             }}
           >
             <MatchCard
