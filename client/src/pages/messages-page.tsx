@@ -11,9 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Send, MoreVertical, Flag, UserPlus } from "lucide-react";
+import { Send, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
 import { Link } from "wouter";
 import type { SelectUser } from "@db/schema";
 
@@ -60,12 +59,15 @@ export default function MessagesPage() {
     const websocket = new WebSocket(wsUrl);
     websocket.onmessage = (event) => {
       const message = JSON.parse(event.data);
-      setMessages((prev) => [...prev, message]);
+      // Only add message if it's from the selected user
+      if (message.senderId === selectedUser?.id || message.receiverId === selectedUser?.id) {
+        setMessages((prev) => [...prev, message]);
+      }
     };
 
     setWs(websocket);
     return () => websocket.close();
-  }, [user]);
+  }, [user, selectedUser]);
 
   const sendMessage = () => {
     if (!ws || !selectedUser || !messageInput.trim()) return;
@@ -78,6 +80,8 @@ export default function MessagesPage() {
     };
 
     ws.send(JSON.stringify(message));
+    // Add the message to the local state
+    setMessages(prev => [...prev, { ...message, id: Date.now(), createdAt: new Date().toISOString() }]);
     setMessageInput("");
   };
 
@@ -105,7 +109,10 @@ export default function MessagesPage() {
               {chatPartners.map((contact) => (
                 <button
                   key={contact.id}
-                  onClick={() => setSelectedUser(contact)}
+                  onClick={() => {
+                    setSelectedUser(contact);
+                    setMessages([]); // Clear messages when switching users
+                  }}
                   className={`w-full p-4 flex items-center gap-3 hover:bg-muted/50 transition-colors ${
                     selectedUser?.id === contact.id ? "bg-muted" : ""
                   }`}
