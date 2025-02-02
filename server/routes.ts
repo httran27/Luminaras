@@ -329,9 +329,53 @@ export function registerRoutes(app: Express): Server {
     res.json(group);
   });
 
-  app.get("/api/groups", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+  app.get("/api/groups/public", async (req, res) => {
+    const publicGroups = await db
+      .select({
+        id: groups.id,
+        name: groups.name,
+        description: groups.description,
+        avatar: groups.avatar,
+        background: groups.background,
+        gameCategory: groups.gameCategory,
+        isPublic: groups.isPublic,
+        createdAt: groups.createdAt,
+        memberCount: sql`count(${groupMembers.id})::int`,
+      })
+      .from(groups)
+      .leftJoin(groupMembers, eq(groupMembers.groupId, groups.id))
+      .where(eq(groups.isPublic, true))
+      .groupBy(groups.id)
+      .orderBy(desc(groups.createdAt));
 
+    res.json(publicGroups);
+  });
+
+  app.get("/api/groups", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      // Return only public groups for non-authenticated users
+      const publicGroups = await db
+        .select({
+          id: groups.id,
+          name: groups.name,
+          description: groups.description,
+          avatar: groups.avatar,
+          background: groups.background,
+          gameCategory: groups.gameCategory,
+          isPublic: groups.isPublic,
+          createdAt: groups.createdAt,
+          memberCount: sql`count(${groupMembers.id})::int`,
+        })
+        .from(groups)
+        .leftJoin(groupMembers, eq(groupMembers.groupId, groups.id))
+        .where(eq(groups.isPublic, true))
+        .groupBy(groups.id)
+        .orderBy(desc(groups.createdAt));
+
+      return res.json(publicGroups);
+    }
+
+    // For authenticated users, show both their groups and public groups
     const userGroups = await db
       .select({
         id: groups.id,
@@ -339,24 +383,24 @@ export function registerRoutes(app: Express): Server {
         description: groups.description,
         avatar: groups.avatar,
         background: groups.background,
-        isPublic: groups.isPublic,
         gameCategory: groups.gameCategory,
+        isPublic: groups.isPublic,
         createdAt: groups.createdAt,
         memberCount: sql`count(${groupMembers.id})::int`,
+        isMember: sql`EXISTS (
+          SELECT 1 FROM ${groupMembers} gm 
+          WHERE gm.group_id = ${groups.id} 
+          AND gm.user_id = ${req.user.id}
+        )`,
       })
       .from(groups)
-      .innerJoin(
-        groupMembers,
-        and(
-          eq(groupMembers.groupId, groups.id),
-          eq(groupMembers.userId, req.user.id)
-        )
-      )
+      .leftJoin(groupMembers, eq(groupMembers.groupId, groups.id))
       .groupBy(groups.id)
       .orderBy(desc(groups.createdAt));
 
     res.json(userGroups);
   });
+
 
   app.get("/api/groups/:id", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
