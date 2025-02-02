@@ -35,7 +35,7 @@ export default function MatchesPage() {
     if (direction === "right") {
       createMatchMutation.mutate(userId);
     }
-    // For both directions, we remove the user from potential matches
+    // For both directions, we remove the current user and show the next one
     queryClient.setQueryData<SelectUser[]>(
       ["/api/matches/potential"],
       (old) => old?.filter((u) => u.id !== userId) ?? []
@@ -63,6 +63,9 @@ export default function MatchesPage() {
     );
   }
 
+  // Only show the first potential match
+  const currentMatch = potentialMatches[0];
+
   return (
     <div className="container max-w-6xl mx-auto flex flex-col items-center gap-8 px-4">
       <div className="text-center space-y-2">
@@ -72,18 +75,12 @@ export default function MatchesPage() {
         </p>
       </div>
 
-      <div className="flex gap-4 justify-center flex-wrap">
-        {potentialMatches.map((match, index) => (
-          <div
-            key={match.id}
-            className="flex-shrink-0"
-          >
-            <MatchCard
-              user={match}
-              onSwipe={(direction) => handleSwipe(direction, match.id)}
-            />
-          </div>
-        ))}
+      <div className="flex justify-center">
+        <MatchCard
+          key={currentMatch.id}
+          user={currentMatch}
+          onSwipe={(direction) => handleSwipe(direction, currentMatch.id)}
+        />
       </div>
     </div>
   );
