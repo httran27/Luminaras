@@ -78,6 +78,28 @@ export default function GroupPage() {
     },
   });
 
+    const joinGroupMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `/api/groups/${id}/join`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/groups/${id}`] });
+      toast({
+        title: "Joined group",
+        description: "You are now a member of this group.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+
   const sendMessageMutation = useMutation({
     mutationFn: async (content: string) => {
       const res = await apiRequest("POST", `/api/groups/${id}/messages`, { content });
@@ -148,6 +170,10 @@ export default function GroupPage() {
     (member) => member.id === user?.id && member.role === "admin"
   );
 
+  const isMember = group.members.some(
+    (member) => member.id === user?.id
+  );
+
   return (
     <div className="max-w-6xl mx-auto grid lg:grid-cols-[1fr_300px] gap-6">
       <Card className="h-[calc(100vh-12rem)]">
@@ -157,7 +183,7 @@ export default function GroupPage() {
               <CardTitle>{group.name}</CardTitle>
               <CardDescription>{group.description}</CardDescription>
             </div>
-            {isAdmin && (
+            {isAdmin ? (
               <Button
                 variant="destructive"
                 size="sm"
@@ -170,6 +196,20 @@ export default function GroupPage() {
               >
                 <Trash2 className="h-4 w-4 mr-2" />
                 Delete Group
+              </Button>
+            ) : !isMember && (
+              <Button
+                onClick={() => joinGroupMutation.mutate()}
+                disabled={joinGroupMutation.isPending}
+              >
+                {joinGroupMutation.isPending ? (
+                  "Joining..."
+                ) : (
+                  <>
+                    <Users className="h-4 w-4 mr-2" />
+                    Join Group
+                  </>
+                )}
               </Button>
             )}
           </div>

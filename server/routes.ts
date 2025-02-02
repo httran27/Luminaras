@@ -525,6 +525,42 @@ export function registerRoutes(app: Express): Server {
 
     res.json(messages);
   });
+    
+    app.post("/api/groups/:id/join", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+
+    const groupId = parseInt(req.params.id);
+    if (isNaN(groupId)) {
+      return res.status(400).send("Invalid group ID");
+    }
+
+    // Check if user is already a member
+    const [existingMember] = await db
+      .select()
+      .from(groupMembers)
+      .where(
+        and(
+          eq(groupMembers.groupId, groupId),
+          eq(groupMembers.userId, req.user.id)
+        )
+      );
+
+    if (existingMember) {
+      return res.status(400).send("Already a member of this group");
+    }
+
+    // Add user as a member with 'member' role
+    const [member] = await db
+      .insert(groupMembers)
+      .values({
+        groupId,
+        userId: req.user.id,
+        role: "member",
+      })
+      .returning();
+
+    res.json(member);
+  });
 
   // News routes (mock data for now)
   app.get("/api/news", (req, res) => {
