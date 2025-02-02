@@ -233,6 +233,19 @@ export function registerRoutes(app: Express): Server {
       role: "admin",
     });
 
+    // Add initial members if provided
+    if (req.body.initialMembers && Array.isArray(req.body.initialMembers)) {
+      await Promise.all(
+        req.body.initialMembers.map(async (memberId: number) => {
+          await db.insert(groupMembers).values({
+            groupId: group.id,
+            userId: memberId,
+            role: "member",
+          });
+        })
+      );
+    }
+
     res.json(group);
   });
 

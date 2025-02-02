@@ -18,9 +18,15 @@ interface UserSelectDialogProps {
   trigger: React.ReactNode;
   onSelect: (user: SelectUser) => void;
   excludeUserIds?: number[];
+  title?: string;
 }
 
-export function UserSelectDialog({ trigger, onSelect, excludeUserIds = [] }: UserSelectDialogProps) {
+export function UserSelectDialog({ 
+  trigger, 
+  onSelect, 
+  excludeUserIds = [], 
+  title = "Select User" 
+}: UserSelectDialogProps) {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
 
@@ -41,7 +47,7 @@ export function UserSelectDialog({ trigger, onSelect, excludeUserIds = [] }: Use
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add Member</DialogTitle>
+          <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div className="flex items-center gap-2">
