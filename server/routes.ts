@@ -163,7 +163,9 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/messages/conversations", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
 
-    // Simplified query to get all users who have messaged with the current user
+    // Get all users who have either:
+    // 1. Exchanged messages with the current user
+    // 2. Have a match with the current user
     const conversations = await db
       .select({
         id: users.id,
@@ -172,19 +174,66 @@ export function registerRoutes(app: Express): Server {
         avatar: users.avatar,
         gamerType: users.gamerType
       })
-      .from(messages)
-      .where(or(
-        eq(messages.senderId, req.user.id),
-        eq(messages.receiverId, req.user.id)
-      ))
-      .innerJoin(users, or(
-        eq(users.id, messages.senderId),
-        eq(users.id, messages.receiverId)
-      ))
-      .groupBy(users.id)
-      .limit(50);
+      .from(users)
+      .where(
+        or(
+          // Users who have exchanged messages
+          sql`EXISTS (
+            SELECT 1 FROM ${messages}
+            WHERE (${messages.senderId} = ${users.id} AND ${messages.receiverId} = ${req.user.id})
+            OR (${messages.senderId} = ${req.user.id} AND ${messages.receiverId} = ${users.id})
+          )`,
+          // Users who are matched
+          sql`EXISTS (
+            SELECT 1 FROM ${matches}
+            WHERE (${matches.userId1} = ${users.id} AND ${matches.userId2} = ${req.user.id})
+            OR (${matches.userId1} = ${req.user.id} AND ${matches.userId2} = ${users.id})
+          )`
+        )
+      )
+      .where(sql`${users.id} != ${req.user.id}`)
+      .orderBy(desc(users.id));
 
     res.json(conversations);
+  });
+
+  // Add this inside registerRoutes function after the conversations route
+  app.post("/api/messages", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+
+    const { receiverId, content } = req.body;
+
+    // Check if users are matched
+    const [match] = await db
+      .select()
+      .from(matches)
+      .where(
+        or(
+          and(
+            eq(matches.userId1, req.user.id),
+            eq(matches.userId2, receiverId)
+          ),
+          and(
+            eq(matches.userId1, receiverId),
+            eq(matches.userId2, req.user.id)
+          )
+        )
+      );
+
+    if (!match) {
+      return res.status(403).send("Can only send messages to matched users");
+    }
+
+    const [message] = await db
+      .insert(messages)
+      .values({
+        senderId: req.user.id,
+        receiverId: receiverId,
+        content: content,
+      })
+      .returning();
+
+    res.json(message);
   });
 
   // Achievement routes
