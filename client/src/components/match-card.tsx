@@ -137,6 +137,9 @@ export function MatchCard({ user, onSwipe }: MatchCardProps) {
             </CardContent>
           </Card>
         </div>
+
+        <div className="flex gap-4 pt-6 mt-4 justify-center">
+        </div>
       </motion.div>
     </div>
   );
