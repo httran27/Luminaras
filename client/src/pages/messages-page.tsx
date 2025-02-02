@@ -29,9 +29,30 @@ export default function MessagesPage() {
   const [ws, setWs] = useState<WebSocket | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
 
+  // Get all matches and conversations
+  const { data: matches } = useQuery<{ userId1: number; userId2: number }[]>({
+    queryKey: ["/api/matches"],
+    enabled: !!user,
+  });
+
   const { data: conversations } = useQuery<SelectUser[]>({
     queryKey: ["/api/messages/conversations"],
   });
+
+  // Combine matches and conversations to get all possible chat partners
+  const chatPartners = [...(conversations || [])];
+  if (matches) {
+    matches.forEach(match => {
+      const partnerId = match.userId1 === user?.id ? match.userId2 : match.userId1;
+      if (!chatPartners.some(p => p.id === partnerId)) {
+        // Add matched user to chat partners if they're not already in conversations
+        const matchedUser = conversations?.find(c => c.id === partnerId);
+        if (matchedUser) {
+          chatPartners.push(matchedUser);
+        }
+      }
+    });
+  }
 
   useEffect(() => {
     if (!user) return;
@@ -39,7 +60,7 @@ export default function MessagesPage() {
     const wsUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${
       window.location.host
     }/ws?userId=${user.id}`;
-    
+
     const websocket = new WebSocket(wsUrl);
     websocket.onmessage = (event) => {
       const message = JSON.parse(event.data);
@@ -72,7 +93,7 @@ export default function MessagesPage() {
         </CardHeader>
         <CardContent className="p-0">
           <ScrollArea className="h-[calc(100vh-16rem)]">
-            {conversations?.map((contact) => (
+            {chatPartners.map((contact) => (
               <button
                 key={contact.id}
                 onClick={() => setSelectedUser(contact)}

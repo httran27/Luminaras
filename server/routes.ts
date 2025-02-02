@@ -86,6 +86,27 @@ export function registerRoutes(app: Express): Server {
     res.json(user);
   });
 
+  // Add this inside registerRoutes function, after the profile routes
+  app.get("/api/users/search", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+
+    const query = req.query.q as string;
+    if (!query) return res.json([]);
+
+    const searchResults = await db
+      .select()
+      .from(users)
+      .where(
+        or(
+          sql`LOWER(${users.username}) LIKE ${`%${query.toLowerCase()}%`}`,
+          sql`LOWER(${users.displayName}) LIKE ${`%${query.toLowerCase()}%`}`
+        )
+      )
+      .limit(10);
+
+    res.json(searchResults);
+  });
+
   // Match routes - Find only users
   app.get("/api/matches/potential", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
