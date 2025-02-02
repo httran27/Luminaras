@@ -29,51 +29,29 @@ export default function MessagesPage() {
   const [ws, setWs] = useState<WebSocket | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
 
-  // Get the userId from URL if it exists (for direct messaging from search)
-  const searchParams = new URLSearchParams(window.location.search);
-  const directMessageUserId = searchParams.get('userId');
-
   // Get all matches and conversations
   const { data: matches } = useQuery<{ userId1: number; userId2: number }[]>({
     queryKey: ["/api/matches"],
     enabled: !!user,
   });
 
-  // Get users for matches
-  const { data: matchedUsers } = useQuery<SelectUser[]>({
-    queryKey: ["/api/users/matched"],
-    enabled: !!matches?.length,
-  });
-
-  // Get direct message user if userId is provided
-  const { data: directMessageUser } = useQuery<SelectUser>({
-    queryKey: [`/api/users/${directMessageUserId}`],
-    enabled: !!directMessageUserId,
-  });
-
   const { data: conversations } = useQuery<SelectUser[]>({
     queryKey: ["/api/messages/conversations"],
   });
 
-  useEffect(() => {
-    // Set the direct message user as selected user when loaded
-    if (directMessageUser && !selectedUser) {
-      setSelectedUser(directMessageUser);
-    }
-  }, [directMessageUser]);
-
   // Combine matches and conversations to get all possible chat partners
   const chatPartners = [...(conversations || [])];
-  if (matchedUsers) {
-    matchedUsers.forEach(matchedUser => {
-      if (!chatPartners.some(p => p.id === matchedUser.id)) {
-        chatPartners.push(matchedUser);
+  if (matches) {
+    matches.forEach(match => {
+      const partnerId = match.userId1 === user?.id ? match.userId2 : match.userId1;
+      if (!chatPartners.some(p => p.id === partnerId)) {
+        // Add matched user to chat partners if they're not already in conversations
+        const matchedUser = conversations?.find(c => c.id === partnerId);
+        if (matchedUser) {
+          chatPartners.push(matchedUser);
+        }
       }
     });
-  }
-  // Add direct message user if not already in the list
-  if (directMessageUser && !chatPartners.some(p => p.id === directMessageUser.id)) {
-    chatPartners.push(directMessageUser);
   }
 
   useEffect(() => {
