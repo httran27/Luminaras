@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,6 +33,7 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [location] = useLocation();
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
 
   useEffect(() => {
     const handler = debounce((value: string) => {
@@ -42,10 +44,27 @@ export default function Navbar() {
     return () => handler.cancel();
   }, [search]);
 
-  const { data: searchResults, isLoading } = useQuery({
+  const { data: searchResults, isLoading, refetch } = useQuery({
     queryKey: ["/api/users/search", { q: debouncedSearch }],
     enabled: debouncedSearch.length > 2 && open,
   });
+
+  const handleSearchSubmit = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && search.length >= 3) {
+      const results = await refetch();
+      if (results.data && results.data.length > 0) {
+        // Navigate to the first user's profile
+        setOpen(false);
+        setLocation(`/profile/${results.data[0].id}`);
+      } else {
+        toast({
+          title: "No users found",
+          description: "No users match your search criteria.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
 
   return (
     <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -93,94 +112,46 @@ export default function Navbar() {
 
         {user && (
           <div className="flex items-center gap-4">
-            <Button
-              variant="outline"
-              className="relative h-9 w-9 xl:h-10 xl:w-60 xl:justify-start xl:px-3 xl:py-2"
-              onClick={() => setOpen(true)}
-            >
-              <Search className="h-4 w-4 xl:mr-2" />
-              <span className="hidden xl:inline-flex">Search users...</span>
-            </Button>
-            <CommandDialog open={open} onOpenChange={setOpen}>
-              <CommandInput 
+            <div className="relative">
+              <Input
+                className="w-60"
                 placeholder="Search users... (min. 3 characters)"
                 value={search}
-                onValueChange={setSearch}
+                onChange={(e) => setSearch(e.target.value)}
+                onKeyPress={handleSearchSubmit}
               />
-              <CommandList>
-                {isLoading ? (
-                  <div className="p-4 text-center text-sm text-muted-foreground">
-                    Loading...
-                  </div>
-                ) : (
-                  <>
-                    <CommandEmpty>No users found.</CommandEmpty>
-                    <CommandGroup heading="Search Results">
-                      {searchResults?.map((result) => (
-                        <CommandItem
-                          key={result.id}
-                          className="flex flex-col items-start p-4"
-                        >
-                          <div className="flex items-center w-full">
-                            <Avatar className="h-10 w-10 mr-3">
-                              <AvatarImage src={result.avatar} />
-                              <AvatarFallback>
-                                {result.displayName?.[0] ?? result.username[0]}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1">
-                              <h4 className="font-medium">
-                                {result.displayName ?? result.username}
-                              </h4>
-                              <p className="text-sm text-muted-foreground">
-                                {result.gamerType || 'Gamer'}
-                              </p>
-                            </div>
+              {searchResults && searchResults.length > 0 && open && (
+                <div className="absolute top-full mt-2 w-full bg-background border rounded-md shadow-lg z-50">
+                  {searchResults.map((result) => (
+                    <div
+                      key={result.id}
+                      className="p-2 hover:bg-muted cursor-pointer"
+                      onClick={() => {
+                        setOpen(false);
+                        setLocation(`/profile/${result.id}`);
+                      }}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={result.avatar} />
+                          <AvatarFallback>
+                            {result.displayName?.[0] ?? result.username[0]}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-medium">
+                            {result.displayName ?? result.username}
                           </div>
-                          <div className="flex gap-2 mt-3 w-full">
-                            <Button 
-                              size="sm" 
-                              className="flex-1"
-                              onClick={() => {
-                                setOpen(false);
-                                setLocation(`/profile/${result.id}`);
-                              }}
-                            >
-                              <User className="h-4 w-4 mr-2" />
-                              View Profile
-                            </Button>
-                            <Button 
-                              size="sm"
-                              variant="outline"
-                              className="flex-1"
-                              onClick={() => {
-                                setOpen(false);
-                                setLocation(`/messages`);
-                              }}
-                            >
-                              <MessageSquare className="h-4 w-4 mr-2" />
-                              Message
-                            </Button>
-                            <Button 
-                              size="sm"
-                              variant="outline"
-                              className="flex-1"
-                              onClick={() => {
-                                setOpen(false);
-                                setLocation(`/groups`);
-                              }}
-                            >
-                              <Users className="h-4 w-4 mr-2" />
-                              Invite
-                            </Button>
+                          <div className="text-sm text-muted-foreground">
+                            {result.gamerType || 'Gamer'}
                           </div>
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </>
-                )}
-              </CommandList>
-            </CommandDialog>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
 
