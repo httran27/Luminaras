@@ -3,9 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
-import { MessageSquare, X, Send } from "lucide-react";
+import { MessageSquare, X, Send, UserPlus } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "wouter";
 
 interface Message {
   id?: number;
@@ -31,16 +32,29 @@ export function ChatPopup() {
   const wsRef = useRef<WebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const { data: conversations } = useQuery<Conversation[]>({
+  const { data: matches = [] } = useQuery<{ userId1: number; userId2: number }[]>({
+    queryKey: ["/api/matches"],
+    enabled: isOpen && !!user,
+  });
+
+  const { data: conversations = [] } = useQuery<Conversation[]>({
     queryKey: ["/api/messages/conversations"],
     enabled: isOpen && !!user,
   });
 
+  // Filter conversations to only include matched users
+  const chatPartners = conversations.filter(partner => 
+    matches.some(match => 
+      (match.userId1 === user?.id && match.userId2 === partner.id) ||
+      (match.userId2 === user?.id && match.userId1 === partner.id)
+    )
+  );
+
   useEffect(() => {
     if (!user || !isOpen) return;
 
-    // Initialize WebSocket connection
-    const ws = new WebSocket(`${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws?userId=${user.id}`);
+    const wsUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws?userId=${user.id}`;
+    const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
     ws.onmessage = (event) => {
@@ -149,12 +163,20 @@ export function ChatPopup() {
               </div>
             ) : (
               <div className="p-3">
-                {conversations?.length === 0 ? (
+                {chatPartners.length === 0 ? (
                   <div className="text-center text-muted-foreground">
-                    No conversations yet. Match with other gamers to start chatting!
+                    <div className="mb-4">
+                      No conversations yet! Match with other gamers to start chatting.
+                    </div>
+                    <Link href="/matches">
+                      <Button>
+                        <UserPlus className="mr-2 h-4 w-4" />
+                        Find Matches
+                      </Button>
+                    </Link>
                   </div>
                 ) : (
-                  conversations?.map((conv) => (
+                  chatPartners.map((conv) => (
                     <Button
                       key={conv.id}
                       variant="ghost"
