@@ -10,6 +10,7 @@ import { useQuery } from "@tanstack/react-query";
 interface Message {
   id?: number;
   senderId: number;
+  receiverId?: number;
   content: string;
   createdAt?: string;
 }
@@ -28,6 +29,7 @@ export function ChatPopup() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const wsRef = useRef<WebSocket | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const { data: conversations } = useQuery<Conversation[]>({
     queryKey: ["/api/messages/conversations"],
@@ -43,7 +45,8 @@ export function ChatPopup() {
 
     ws.onmessage = (event) => {
       const message = JSON.parse(event.data);
-      if (message.senderId === activeChat?.id) {
+      // Only add message if it's from the active chat
+      if (message.senderId === activeChat?.id || message.receiverId === activeChat?.id) {
         setMessages(prev => [...prev, message]);
       }
     };
@@ -52,6 +55,10 @@ export function ChatPopup() {
       ws.close();
     };
   }, [user, isOpen, activeChat]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   const sendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,7 +101,10 @@ export function ChatPopup() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setActiveChat(null)}
+                    onClick={() => {
+                      setActiveChat(null);
+                      setMessages([]); // Clear messages when going back
+                    }}
                   >
                     Back
                   </Button>
@@ -120,6 +130,7 @@ export function ChatPopup() {
                         </div>
                       </div>
                     ))}
+                    <div ref={messagesEndRef} />
                   </div>
                 </ScrollArea>
                 <div className="p-3 border-t">
@@ -138,25 +149,34 @@ export function ChatPopup() {
               </div>
             ) : (
               <div className="p-3">
-                {conversations?.map((conv) => (
-                  <Button
-                    key={conv.id}
-                    variant="ghost"
-                    className="w-full justify-start mb-2"
-                    onClick={() => setActiveChat(conv)}
-                  >
-                    <div className="text-left">
-                      <div className="font-medium">
-                        {conv.displayName ?? conv.username}
-                      </div>
-                      {conv.lastMessage && (
-                        <div className="text-sm text-muted-foreground truncate">
-                          {conv.lastMessage}
+                {conversations?.length === 0 ? (
+                  <div className="text-center text-muted-foreground">
+                    No conversations yet. Match with other gamers to start chatting!
+                  </div>
+                ) : (
+                  conversations?.map((conv) => (
+                    <Button
+                      key={conv.id}
+                      variant="ghost"
+                      className="w-full justify-start mb-2"
+                      onClick={() => {
+                        setActiveChat(conv);
+                        setMessages([]); // Clear messages when switching users
+                      }}
+                    >
+                      <div className="text-left">
+                        <div className="font-medium">
+                          {conv.displayName ?? conv.username}
                         </div>
-                      )}
-                    </div>
-                  </Button>
-                ))}
+                        {conv.lastMessage && (
+                          <div className="text-sm text-muted-foreground truncate">
+                            {conv.lastMessage}
+                          </div>
+                        )}
+                      </div>
+                    </Button>
+                  ))
+                )}
               </div>
             )}
           </ScrollArea>
