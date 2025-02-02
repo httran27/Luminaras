@@ -4,10 +4,12 @@ import { useAuth } from "@/hooks/use-auth";
 import { MatchCard } from "@/components/match-card";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import type { SelectUser } from "@db/schema";
 
 export default function MatchesPage() {
   const { user } = useAuth();
+  const { toast } = useToast();
 
   const { data: potentialMatches, isLoading } = useQuery<SelectUser[]>({
     queryKey: ["/api/matches/potential"],
@@ -19,6 +21,13 @@ export default function MatchesPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/matches"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/messages/conversations"] });
+
+      toast({
+        title: "Match Found! 🎮",
+        description: "You can now chat with your new gaming friend in the Messages tab!",
+        duration: 5000,
+      });
     },
   });
 
@@ -59,7 +68,7 @@ export default function MatchesPage() {
       <div className="text-center space-y-2">
         <h1 className="text-3xl font-bold">Quick Match</h1>
         <p className="text-muted-foreground">
-          Swipe right to connect, left to pass
+          Tap card to see more info, swipe right to connect, left to pass
         </p>
       </div>
 

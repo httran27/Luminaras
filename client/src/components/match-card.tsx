@@ -4,7 +4,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { motion, useMotionValue, useTransform } from "framer-motion";
 import type { SelectUser } from "@db/schema";
-import { Gamepad } from "lucide-react";
+import { Gamepad, Music, Users } from "lucide-react";
+import { useState } from "react";
 
 interface MatchCardProps {
   user: SelectUser;
@@ -12,6 +13,7 @@ interface MatchCardProps {
 }
 
 export function MatchCard({ user, onSwipe }: MatchCardProps) {
+  const [isFlipped, setIsFlipped] = useState(false);
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-200, 200], [-30, 30]);
   const opacity = useTransform(
@@ -35,64 +37,119 @@ export function MatchCard({ user, onSwipe }: MatchCardProps) {
       whileTap={{ cursor: "grabbing" }}
       initial={{ scale: 1 }}
       whileDrag={{ scale: 1.05 }}
-      animate={{ scale: 1, x: 0 }}
+      animate={{ scale: 1, x: 0, rotateY: isFlipped ? 180 : 0 }}
       transition={{
         type: "spring",
         stiffness: 300,
         damping: 20,
         mass: 0.5
       }}
+      onClick={() => setIsFlipped(!isFlipped)}
     >
-      <Card className="w-80 bg-card mx-auto">
+      <Card className={`w-80 bg-card mx-auto transform-style-3d transition-transform duration-500 ${isFlipped ? 'rotate-y-180' : ''}`}>
         <CardContent className="p-6">
-          <div className="flex flex-col items-center gap-4">
-            <Avatar className="h-24 w-24 border-2 border-primary/20">
-              <AvatarImage src={user.avatar || undefined} />
-              <AvatarFallback>
-                {user.displayName?.[0]?.toUpperCase() ?? user.username[0].toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
+          {!isFlipped ? (
+            // Front of card
+            <div className="flex flex-col items-center gap-4">
+              <Avatar className="h-24 w-24 border-2 border-primary/20">
+                <AvatarImage src={user.avatar || undefined} />
+                <AvatarFallback>
+                  {user.displayName?.[0]?.toUpperCase() ?? user.username[0].toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
 
-            <div className="text-center space-y-2">
-              <h3 className="text-xl font-semibold">
-                {user.displayName ?? user.username}
-              </h3>
-              {user.gamerType && (
-                <Badge variant="secondary" className="mb-2">
-                  <Gamepad className="w-3 h-3 mr-1" />
-                  {user.gamerType}
-                </Badge>
-              )}
-              <p className="text-sm text-muted-foreground">
-                {user.bio || "No bio available"}
-              </p>
-            </div>
+              <div className="text-center space-y-2">
+                <h3 className="text-xl font-semibold">
+                  {user.displayName ?? user.username}
+                </h3>
+                {user.gamerType && (
+                  <Badge variant="secondary" className="mb-2">
+                    <Gamepad className="w-3 h-3 mr-1" />
+                    {user.gamerType}
+                  </Badge>
+                )}
+              </div>
 
-            <div className="flex flex-wrap gap-2 justify-center">
-              {user.gameInterests?.map((game) => (
-                <Badge key={game} variant="outline">
-                  {game}
-                </Badge>
-              ))}
+              <div className="flex flex-wrap gap-2 justify-center">
+                {user.gameInterests?.map((game) => (
+                  <Badge key={game} variant="outline">
+                    {game}
+                  </Badge>
+                ))}
+              </div>
             </div>
+          ) : (
+            // Back of card (flipped)
+            <div className="flex flex-col gap-4 rotate-y-180">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <Gamepad className="h-4 w-4" />
+                    Gaming Preferences
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Level: {user.gamingLevel || "Not specified"}
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {user.gameInterests?.map((game) => (
+                      <Badge key={game} variant="outline" className="text-xs">
+                        {game}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
 
-            <div className="flex gap-2 pt-4">
-              <Button 
-                variant="destructive"
-                size="lg"
-                onClick={() => onSwipe("left")}
-                className="shadow-lg hover:shadow-xl transition-shadow"
-              >
-                Pass
-              </Button>
-              <Button 
-                size="lg"
-                onClick={() => onSwipe("right")}
-                className="shadow-lg hover:shadow-xl transition-shadow"
-              >
-                Connect
-              </Button>
+                {user.musicGenres && user.musicGenres.length > 0 && (
+                  <div className="space-y-2">
+                    <h3 className="font-semibold flex items-center gap-2">
+                      <Music className="h-4 w-4" />
+                      Music Preferences
+                    </h3>
+                    <div className="flex flex-wrap gap-1">
+                      {user.musicGenres.map((genre) => (
+                        <Badge key={genre} variant="outline" className="text-xs">
+                          {genre}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    Bio
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {user.bio || "No bio available"}
+                  </p>
+                </div>
+              </div>
             </div>
+          )}
+
+          <div className="flex gap-2 pt-4">
+            <Button 
+              variant="destructive"
+              size="lg"
+              onClick={(e) => {
+                e.stopPropagation();
+                onSwipe("left");
+              }}
+              className="shadow-lg hover:shadow-xl transition-shadow"
+            >
+              Pass
+            </Button>
+            <Button 
+              size="lg"
+              onClick={(e) => {
+                e.stopPropagation();
+                onSwipe("right");
+              }}
+              className="shadow-lg hover:shadow-xl transition-shadow"
+            >
+              Connect
+            </Button>
           </div>
         </CardContent>
       </Card>
