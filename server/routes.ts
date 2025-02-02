@@ -181,9 +181,7 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/messages/conversations", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
 
-    // Get all users who have either:
-    // 1. Exchanged messages with the current user
-    // 2. Have a match with the current user
+    // Only get users who have matched with the current user
     const conversations = await db
       .select({
         id: users.id,
@@ -194,20 +192,11 @@ export function registerRoutes(app: Express): Server {
       })
       .from(users)
       .where(
-        or(
-          // Users who have exchanged messages
-          sql`EXISTS (
-            SELECT 1 FROM ${messages}
-            WHERE (${messages.senderId} = ${users.id} AND ${messages.receiverId} = ${req.user.id})
-            OR (${messages.senderId} = ${req.user.id} AND ${messages.receiverId} = ${users.id})
-          )`,
-          // Users who are matched
-          sql`EXISTS (
-            SELECT 1 FROM ${matches}
-            WHERE (${matches.userId1} = ${users.id} AND ${matches.userId2} = ${req.user.id})
-            OR (${matches.userId1} = ${req.user.id} AND ${matches.userId2} = ${users.id})
-          )`
-        )
+        sql`EXISTS (
+          SELECT 1 FROM ${matches}
+          WHERE (${matches.userId1} = ${users.id} AND ${matches.userId2} = ${req.user.id})
+          OR (${matches.userId1} = ${req.user.id} AND ${matches.userId2} = ${users.id})
+        )`
       )
       .where(sql`${users.id} != ${req.user.id}`)
       .orderBy(desc(users.id));
