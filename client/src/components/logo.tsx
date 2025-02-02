@@ -2,12 +2,12 @@ import { Image } from "@/components/ui/image";
 
 export function Logo() {
   return (
-    <div className="flex items-center gap-0 mt-9">
+    <div className="flex items-center mt-6 gap-2">
       <img
-        src="logoo.png"
+        src="logo1.png"
         alt="Luminaras"
-        width="120"
-        height="90"
+        width="60"
+        height="80"
       />
       
     </div>
