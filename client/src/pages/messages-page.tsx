@@ -182,26 +182,28 @@ export default function MessagesPage() {
                       }`}
                     >
                       {message.senderId !== user?.id && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 hover:bg-muted"
-                            >
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="start">
-                            <DropdownMenuItem
-                              onClick={() => handleReport(message.id)}
-                              className="text-destructive"
-                            >
-                              <Flag className="h-4 w-4 mr-2" />
-                              Report Message
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 hover:bg-muted"
+                              >
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start">
+                              <DropdownMenuItem
+                                onClick={() => handleReport(message.id)}
+                                className="text-destructive"
+                              >
+                                <Flag className="h-4 w-4 mr-2" />
+                                Report Message
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </>
                       )}
                       <div
                         className={`rounded-lg px-4 py-2 max-w-[70%] ${
