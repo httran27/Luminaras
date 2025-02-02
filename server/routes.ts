@@ -95,8 +95,8 @@ export function registerRoutes(app: Express): Server {
     if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
 
     const query = req.query.q?.toString() || '';
-    if (!query || query.length < 3) {
-      return res.status(400).json({ error: 'Search query must be at least 3 characters' });
+    if (!query) {
+      return res.status(400).json({ error: 'Please provide a search query' });
     }
 
     try {
