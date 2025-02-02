@@ -23,11 +23,21 @@ function Router() {
         <Switch>
           <Route path="/" component={HomePage} />
           <Route path="/auth" component={AuthPage} />
-          <ProtectedRoute path="/profile/:id" component={ProfilePage} />
-          <ProtectedRoute path="/matches" component={MatchesPage} />
-          <ProtectedRoute path="/groups" component={GroupsPage} />
-          <ProtectedRoute path="/groups/:id" component={GroupPage} />
-          <ProtectedRoute path="/news" component={NewsPage} />
+          <Route path="/profile/:id">
+            {(params) => <ProtectedRoute component={ProfilePage} params={params} />}
+          </Route>
+          <Route path="/matches">
+            {() => <ProtectedRoute component={MatchesPage} />}
+          </Route>
+          <Route path="/groups">
+            {() => <ProtectedRoute component={GroupsPage} />}
+          </Route>
+          <Route path="/groups/:id">
+            {(params) => <ProtectedRoute component={GroupPage} params={params} />}
+          </Route>
+          <Route path="/news">
+            {() => <ProtectedRoute component={NewsPage} />}
+          </Route>
           <Route component={NotFound} />
         </Switch>
       </main>
