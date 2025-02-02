@@ -5,7 +5,7 @@ import { Logo } from "./logo";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,17 +23,28 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { User, MessageSquare, Search, Users } from "lucide-react";
+import debounce from "lodash/debounce";
 
 export default function Navbar() {
   const { user, logoutMutation } = useAuth();
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [location] = useLocation();
   const [, setLocation] = useLocation();
 
-  const { data: searchResults } = useQuery({
-    queryKey: ["/api/users/search", { q: search }],
-    enabled: search.length > 0 && open,
+  useEffect(() => {
+    const handler = debounce((value: string) => {
+      setDebouncedSearch(value);
+    }, 300);
+
+    handler(search);
+    return () => handler.cancel();
+  }, [search]);
+
+  const { data: searchResults, isLoading } = useQuery({
+    queryKey: ["/api/users/search", { q: debouncedSearch }],
+    enabled: debouncedSearch.length > 2 && open,
   });
 
   return (
@@ -92,74 +103,82 @@ export default function Navbar() {
             </Button>
             <CommandDialog open={open} onOpenChange={setOpen}>
               <CommandInput 
-                placeholder="Search users..."
+                placeholder="Search users... (min. 3 characters)"
                 value={search}
                 onValueChange={setSearch}
               />
               <CommandList>
-                <CommandEmpty>No users found.</CommandEmpty>
-                <CommandGroup heading="Search Results">
-                  {searchResults?.map((result) => (
-                    <CommandItem
-                      key={result.id}
-                      className="flex flex-col items-start p-4"
-                    >
-                      <div className="flex items-center w-full">
-                        <Avatar className="h-10 w-10 mr-3">
-                          <AvatarImage src={result.avatar} />
-                          <AvatarFallback>
-                            {result.displayName?.[0] ?? result.username[0]}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <h4 className="font-medium">
-                            {result.displayName ?? result.username}
-                          </h4>
-                          <p className="text-sm text-muted-foreground">
-                            {result.gamerType || 'Gamer'}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex gap-2 mt-3 w-full">
-                        <Button 
-                          size="sm" 
-                          className="flex-1"
-                          onClick={() => {
-                            setOpen(false);
-                            setLocation(`/profile/${result.id}`);
-                          }}
+                {isLoading ? (
+                  <div className="p-4 text-center text-sm text-muted-foreground">
+                    Loading...
+                  </div>
+                ) : (
+                  <>
+                    <CommandEmpty>No users found.</CommandEmpty>
+                    <CommandGroup heading="Search Results">
+                      {searchResults?.map((result) => (
+                        <CommandItem
+                          key={result.id}
+                          className="flex flex-col items-start p-4"
                         >
-                          <User className="h-4 w-4 mr-2" />
-                          View Profile
-                        </Button>
-                        <Button 
-                          size="sm"
-                          variant="outline"
-                          className="flex-1"
-                          onClick={() => {
-                            setOpen(false);
-                            setLocation(`/messages`);
-                          }}
-                        >
-                          <MessageSquare className="h-4 w-4 mr-2" />
-                          Message
-                        </Button>
-                        <Button 
-                          size="sm"
-                          variant="outline"
-                          className="flex-1"
-                          onClick={() => {
-                            setOpen(false);
-                            setLocation(`/groups`);
-                          }}
-                        >
-                          <Users className="h-4 w-4 mr-2" />
-                          Invite
-                        </Button>
-                      </div>
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
+                          <div className="flex items-center w-full">
+                            <Avatar className="h-10 w-10 mr-3">
+                              <AvatarImage src={result.avatar} />
+                              <AvatarFallback>
+                                {result.displayName?.[0] ?? result.username[0]}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                              <h4 className="font-medium">
+                                {result.displayName ?? result.username}
+                              </h4>
+                              <p className="text-sm text-muted-foreground">
+                                {result.gamerType || 'Gamer'}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex gap-2 mt-3 w-full">
+                            <Button 
+                              size="sm" 
+                              className="flex-1"
+                              onClick={() => {
+                                setOpen(false);
+                                setLocation(`/profile/${result.id}`);
+                              }}
+                            >
+                              <User className="h-4 w-4 mr-2" />
+                              View Profile
+                            </Button>
+                            <Button 
+                              size="sm"
+                              variant="outline"
+                              className="flex-1"
+                              onClick={() => {
+                                setOpen(false);
+                                setLocation(`/messages`);
+                              }}
+                            >
+                              <MessageSquare className="h-4 w-4 mr-2" />
+                              Message
+                            </Button>
+                            <Button 
+                              size="sm"
+                              variant="outline"
+                              className="flex-1"
+                              onClick={() => {
+                                setOpen(false);
+                                setLocation(`/groups`);
+                              }}
+                            >
+                              <Users className="h-4 w-4 mr-2" />
+                              Invite
+                            </Button>
+                          </div>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </>
+                )}
               </CommandList>
             </CommandDialog>
           </div>
