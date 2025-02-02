@@ -15,7 +15,7 @@ import { Send } from "lucide-react";
 import type { SelectUser } from "@db/schema";
 
 interface Message {
-  id?: number;
+  id: number;
   senderId: number;
   receiverId: number;
   content: string;
@@ -62,47 +62,23 @@ export default function MessagesPage() {
     }/ws?userId=${user.id}`;
 
     const websocket = new WebSocket(wsUrl);
-
-    websocket.onopen = () => {
-      console.log('WebSocket connection established');
-    };
-
     websocket.onmessage = (event) => {
       const message = JSON.parse(event.data);
-      if ((message.senderId === selectedUser?.id) || 
-          (message.receiverId === selectedUser?.id && message.senderId === user.id)) {
-        setMessages(prev => [...prev, message]);
-      }
-    };
-
-    websocket.onerror = (error) => {
-      console.error('WebSocket error:', error);
+      setMessages((prev) => [...prev, message]);
     };
 
     setWs(websocket);
     return () => websocket.close();
-  }, [user, selectedUser]);
-
-  // Load existing messages when selecting a user
-  useEffect(() => {
-    if (selectedUser && user) {
-      // Fetch existing messages for the selected conversation
-      fetch(`/api/messages?partnerId=${selectedUser.id}`)
-        .then(res => res.json())
-        .then(data => setMessages(data))
-        .catch(err => console.error('Error loading messages:', err));
-    }
-  }, [selectedUser, user]);
+  }, [user]);
 
   const sendMessage = () => {
-    if (!ws || !selectedUser || !messageInput.trim() || !user) return;
+    if (!ws || !selectedUser || !messageInput.trim()) return;
 
     const message = {
       type: "message",
-      senderId: user.id,
+      senderId: user!.id,
       receiverId: selectedUser.id,
       content: messageInput.trim(),
-      createdAt: new Date().toISOString(),
     };
 
     ws.send(JSON.stringify(message));
