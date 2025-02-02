@@ -28,6 +28,7 @@ export default function Navbar() {
   const { user, logoutMutation } = useAuth();
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
+  const [location] = useLocation();
   const [, setLocation] = useLocation();
 
   const { data: searchResults } = useQuery({
@@ -48,22 +49,30 @@ export default function Navbar() {
           {user && (
             <>
               <Link href="/matches">
-                <a className="text-sm font-medium transition-colors hover:text-primary">
+                <a className={`text-sm font-medium transition-colors hover:text-primary ${
+                  location === "/matches" ? "text-primary" : ""
+                }`}>
                   Quick Match
                 </a>
               </Link>
               <Link href="/messages">
-                <a className="text-sm font-medium transition-colors hover:text-primary">
+                <a className={`text-sm font-medium transition-colors hover:text-primary ${
+                  location === "/messages" ? "text-primary" : ""
+                }`}>
                   Messages
                 </a>
               </Link>
               <Link href="/groups">
-                <a className="text-sm font-medium transition-colors hover:text-primary">
+                <a className={`text-sm font-medium transition-colors hover:text-primary ${
+                  location === "/groups" ? "text-primary" : ""
+                }`}>
                   Groups
                 </a>
               </Link>
               <Link href="/news">
-                <a className="text-sm font-medium transition-colors hover:text-primary">
+                <a className={`text-sm font-medium transition-colors hover:text-primary ${
+                  location === "/news" ? "text-primary" : ""
+                }`}>
                   News
                 </a>
               </Link>
@@ -75,7 +84,7 @@ export default function Navbar() {
           <div className="flex items-center gap-4">
             <Button
               variant="outline"
-              className="relative h-9 w-9 p-0 xl:h-10 xl:w-60 xl:justify-start xl:px-3 xl:py-2"
+              className="relative h-9 w-9 xl:h-10 xl:w-60 xl:justify-start xl:px-3 xl:py-2"
               onClick={() => setOpen(true)}
             >
               <Search className="h-4 w-4 xl:mr-2" />
