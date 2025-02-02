@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { User } from "lucide-react";
+import { User, MessageSquare } from "lucide-react";
 
 export default function Navbar() {
   const { user, logoutMutation } = useAuth();
@@ -30,6 +30,11 @@ export default function Navbar() {
               <Link href="/matches">
                 <a className="text-sm font-medium transition-colors hover:text-primary">
                   Quick Match
+                </a>
+              </Link>
+              <Link href="/messages">
+                <a className="text-sm font-medium transition-colors hover:text-primary">
+                  Messages
                 </a>
               </Link>
               <Link href="/groups">

@@ -12,6 +12,7 @@ import MatchesPage from "@/pages/matches-page";
 import NewsPage from "@/pages/news-page";
 import GroupsPage from "@/pages/groups-page";
 import GroupPage from "@/pages/group-page";
+import MessagesPage from "@/pages/messages-page";
 import Navbar from "@/components/navbar";
 import { ChatPopup } from "@/components/chat-popup";
 
@@ -28,6 +29,9 @@ function Router() {
           </Route>
           <Route path="/matches">
             {() => <ProtectedRoute component={MatchesPage} />}
+          </Route>
+          <Route path="/messages">
+            {() => <ProtectedRoute component={MessagesPage} />}
           </Route>
           <Route path="/groups">
             {() => <ProtectedRoute component={GroupsPage} />}
