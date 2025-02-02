@@ -10,6 +10,14 @@ import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -39,6 +47,9 @@ export function ChatPopup() {
   const [activeChat, setActiveChat] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  const [reportReason, setReportReason] = useState("");
+  const [messageToReport, setMessageToReport] = useState<number | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -74,6 +85,9 @@ export function ChatPopup() {
         title: "Message Reported",
         description: "Thank you for your report. We will review it shortly.",
       });
+      setReportDialogOpen(false);
+      setReportReason("");
+      setMessageToReport(null);
     },
     onError: (error: Error) => {
       toast({
@@ -85,12 +99,17 @@ export function ChatPopup() {
   });
 
   const handleReport = (messageId: number) => {
-    if (window.confirm("Are you sure you want to report this message? This action cannot be undone.")) {
-      reportMessageMutation.mutate({
-        messageId,
-        reason: "Inappropriate content",
-      });
-    }
+    setMessageToReport(messageId);
+    setReportDialogOpen(true);
+  };
+
+  const handleSubmitReport = () => {
+    if (!messageToReport || !reportReason.trim()) return;
+
+    reportMessageMutation.mutate({
+      messageId: messageToReport,
+      reason: reportReason.trim(),
+    });
   };
 
   const { data: messageHistory = [] } = useQuery<Message[]>({
@@ -280,6 +299,42 @@ export function ChatPopup() {
           <MessageSquare className="h-6 w-6" />
         </Button>
       )}
+
+      <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Report Message</DialogTitle>
+            <DialogDescription>
+              Please provide a reason for reporting this message. Your report will be reviewed by our moderation team.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Input
+              placeholder="Enter reason for reporting..."
+              value={reportReason}
+              onChange={(e) => setReportReason(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setReportDialogOpen(false);
+                setReportReason("");
+                setMessageToReport(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSubmitReport}
+              disabled={!reportReason.trim() || reportMessageMutation.isPending}
+            >
+              {reportMessageMutation.isPending ? "Submitting..." : "Submit Report"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
