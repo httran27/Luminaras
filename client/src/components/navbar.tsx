@@ -31,6 +31,12 @@ export default function Navbar() {
 
   const { data: searchResults } = useQuery({
     queryKey: ["/api/users/search", search],
+    queryFn: async () => {
+      if (!search) return [];
+      const response = await fetch(`/api/users/search?q=${encodeURIComponent(search)}`);
+      if (!response.ok) throw new Error('Search failed');
+      return response.json();
+    },
     enabled: search.length > 0,
   });
 
@@ -88,22 +94,30 @@ export default function Navbar() {
               />
               <CommandList>
                 <CommandEmpty>No results found.</CommandEmpty>
-                <CommandGroup>
+                <CommandGroup heading="Users">
                   {searchResults?.map((result) => (
                     <CommandItem
                       key={result.id}
+                      className="flex items-center justify-between"
                       onSelect={() => {
                         setOpen(false);
                         window.location.href = `/profile/${result.id}`;
                       }}
                     >
-                      <Avatar className="h-6 w-6 mr-2">
-                        <AvatarImage src={result.avatar} />
-                        <AvatarFallback>
-                          {result.displayName?.[0] ?? result.username[0]}
-                        </AvatarFallback>
-                      </Avatar>
-                      {result.displayName ?? result.username}
+                      <div className="flex items-center">
+                        <Avatar className="h-6 w-6 mr-2">
+                          <AvatarImage src={result.avatar} />
+                          <AvatarFallback>
+                            {result.displayName?.[0] ?? result.username[0]}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span>{result.displayName ?? result.username}</span>
+                      </div>
+                      <Link href={`/messages?userId=${result.id}`}>
+                        <Button size="sm" variant="ghost">
+                          <MessageSquare className="h-4 w-4" />
+                        </Button>
+                      </Link>
                     </CommandItem>
                   ))}
                 </CommandGroup>
