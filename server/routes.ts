@@ -4,7 +4,7 @@ import { setupAuth } from "./auth";
 import { setupWebSocket } from "./ws";
 import { db } from "@db";
 import { users, matches, messages, achievements, groups, groupMembers, groupMessages } from "@db/schema";
-import { eq, and, desc, or, sql } from "drizzle-orm";
+import { eq, and, desc, or, sql, asc } from "drizzle-orm";
 import multer from "multer";
 import path from "path";
 import express from "express";
@@ -213,6 +213,33 @@ export function registerRoutes(app: Express): Server {
       .orderBy(desc(users.id));
 
     res.json(conversations);
+  });
+
+    // Add endpoint to fetch messages between users
+  app.get("/api/messages", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+
+    const partnerId = parseInt(req.query.partnerId as string);
+    if (isNaN(partnerId)) return res.status(400).send("Invalid partner ID");
+
+    const messages = await db
+      .select()
+      .from(messages)
+      .where(
+        or(
+          and(
+            eq(messages.senderId, req.user.id),
+            eq(messages.receiverId, partnerId)
+          ),
+          and(
+            eq(messages.senderId, partnerId),
+            eq(messages.receiverId, req.user.id)
+          )
+        )
+      )
+      .orderBy(asc(messages.createdAt));
+
+    res.json(messages);
   });
 
   app.post("/api/messages", async (req, res) => {
