@@ -125,6 +125,17 @@ export default function MessagesPage() {
     setMessageInput("");
   };
 
+  const { data: messageHistory = [] } = useQuery<Message[]>({
+    queryKey: [`/api/messages/${selectedUser?.id}`],
+    enabled: !!selectedUser,
+  });
+
+  useEffect(() => {
+    if (messageHistory.length > 0) {
+      setMessages(messageHistory);
+    }
+  }, [messageHistory]);
+
   return (
     <div className="grid md:grid-cols-[300px_1fr] gap-4 h-[calc(100vh-12rem)]">
       <Card>

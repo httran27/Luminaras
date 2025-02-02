@@ -1,6 +1,8 @@
 import { WebSocketServer, WebSocket } from "ws";
 import type { Server } from "http";
 import { parse } from "url";
+import { db } from "@db";
+import { messages, groupMessages } from "@db/schema";
 
 interface Message {
   type: "message";
@@ -42,7 +44,7 @@ export function setupWebSocket(server: Server) {
         ws.userId = userId;
         clients.set(userId, ws);
 
-        ws.on("message", (data) => {
+        ws.on("message", async (data) => {
           try {
             const message = JSON.parse(data.toString()) as Message;
 
@@ -53,20 +55,28 @@ export function setupWebSocket(server: Server) {
               return;
             }
 
+            // Save the message to database
+            const [savedMessage] = await db
+              .insert(messages)
+              .values({
+                senderId: message.senderId,
+                receiverId: message.receiverId,
+                content: message.content,
+              })
+              .returning();
+
             // Ensure message is only sent to intended recipient
             if (message.receiverId && message.senderId === userId) {
               const receiverWs = clients.get(message.receiverId);
               if (receiverWs?.readyState === WebSocket.OPEN) {
                 receiverWs.send(JSON.stringify({
-                  type: "message",
-                  senderId: userId,
-                  receiverId: message.receiverId,
-                  content: message.content
+                  ...savedMessage,
+                  type: "message"
                 }));
               }
             }
           } catch (err) {
-            console.error("Invalid message format:", err);
+            console.error("Invalid message format or database error:", err);
           }
         });
 
@@ -92,7 +102,7 @@ export function setupWebSocket(server: Server) {
         ws.userId = userId;
         clients.set(userId, ws);
 
-        ws.on("message", (data) => {
+        ws.on("message", async (data) => {
           try {
             const message = JSON.parse(data.toString()) as Message;
 
@@ -103,18 +113,31 @@ export function setupWebSocket(server: Server) {
               return;
             }
 
+            // Save the group message to database
+            const [savedMessage] = await db
+              .insert(groupMessages)
+              .values({
+                groupId,
+                senderId: message.senderId,
+                content: message.content,
+              })
+              .returning();
+
             // Only broadcast to other group members
             const groupMembers = groupClients.get(groupId) || new Set();
             groupMembers.forEach(memberId => {
               if (memberId !== userId) {  // Don't send back to sender
                 const memberWs = clients.get(memberId);
                 if (memberWs?.readyState === WebSocket.OPEN) {
-                  memberWs.send(JSON.stringify(message));
+                  memberWs.send(JSON.stringify({
+                    ...savedMessage,
+                    type: "message"
+                  }));
                 }
               }
             });
           } catch (err) {
-            console.error("Invalid message format:", err);
+            console.error("Invalid message format or database error:", err);
           }
         });
 

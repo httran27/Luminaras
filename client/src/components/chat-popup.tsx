@@ -93,6 +93,17 @@ export function ChatPopup() {
     }
   };
 
+  const { data: messageHistory = [] } = useQuery<Message[]>({
+    queryKey: [`/api/messages/${activeChat?.id}`],
+    enabled: !!activeChat,
+  });
+
+  useEffect(() => {
+    if (messageHistory.length > 0) {
+      setMessages(messageHistory);
+    }
+  }, [messageHistory]);
+
   useEffect(() => {
     if (!user || !isOpen) return;
 

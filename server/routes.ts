@@ -248,6 +248,42 @@ export function registerRoutes(app: Express): Server {
     res.json(message);
   });
 
+    // Add this route after the existing message routes
+  app.get("/api/messages/:userId", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+
+    const otherUserId = parseInt(req.params.userId);
+    if (isNaN(otherUserId)) {
+      return res.status(400).send("Invalid user ID");
+    }
+
+    // Get message history between the two users
+    const messageHistory = await db
+      .select({
+        id: messages.id,
+        senderId: messages.senderId,
+        receiverId: messages.receiverId,
+        content: messages.content,
+        createdAt: messages.createdAt,
+      })
+      .from(messages)
+      .where(
+        or(
+          and(
+            eq(messages.senderId, req.user.id),
+            eq(messages.receiverId, otherUserId)
+          ),
+          and(
+            eq(messages.senderId, otherUserId),
+            eq(messages.receiverId, req.user.id)
+          )
+        )
+      )
+      .orderBy(messages.createdAt);
+
+    res.json(messageHistory);
+  });
+
     // Add new routes for message reports
   app.post("/api/messages/:messageId/report", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
