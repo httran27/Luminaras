@@ -24,6 +24,7 @@ export default function Navbar() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   useEffect(() => {
     const handler = debounce((value: string) => {
@@ -45,6 +46,7 @@ export default function Navbar() {
         if (searchResults && searchResults.length > 0) {
           setLocation(`/profile/${searchResults[0].id}`);
           setSearch('');
+          setIsSearchFocused(false);
         } else {
           toast({
             title: "No users found",
@@ -62,45 +64,49 @@ export default function Navbar() {
     }
   };
 
+  const navigateToProfile = (userId: number) => {
+    setLocation(`/profile/${userId}`);
+    setSearch('');
+    setIsSearchFocused(false);
+  };
+
   return (
     <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center px-4">
         <Link href="/">
-          <a className="mr-8">
-            <Logo />
-          </a>
+          <Logo className="mr-8" />
         </Link>
 
         <div className="flex gap-6 flex-1">
           {user && (
             <>
               <Link href="/matches">
-                <a className={`text-sm font-medium transition-colors hover:text-primary ${
-                  location === "/matches" ? "text-primary" : ""
+                <span className={`text-sm font-medium transition-colors hover:text-primary ${
+                  location === "/matches" ? "text-primary" : "text-muted-foreground"
                 }`}>
                   Quick Match
-                </a>
+                </span>
               </Link>
               <Link href="/messages">
-                <a className={`text-sm font-medium transition-colors hover:text-primary ${
-                  location === "/messages" ? "text-primary" : ""
+                <span className={`text-sm font-medium transition-colors hover:text-primary ${
+                  location === "/messages" ? "text-primary" : "text-muted-foreground"
                 }`}>
                   Messages
-                </a>
+                </span>
               </Link>
               <Link href="/groups">
-                <a className={`text-sm font-medium transition-colors hover:text-primary ${
-                  location === "/groups" ? "text-primary" : ""
+                <span className={`text-sm font-medium transition-colors hover:text-primary ${
+                  location === "/groups" ? "text-primary" : "text-muted-foreground"
                 }`}>
                   Groups
-                </a>
+                </span>
               </Link>
               <Link href="/news">
-                <a className={`text-sm font-medium transition-colors hover:text-primary ${
-                  location === "/news" ? "text-primary" : ""
+                <span className={`text-sm font-medium transition-colors hover:text-primary ${
+                  location === "/news" ? "text-primary" : "text-muted-foreground"
                 }`}>
                   News
-                </a>
+                </span>
               </Link>
             </>
           )}
@@ -110,28 +116,29 @@ export default function Navbar() {
           <div className="flex items-center gap-4">
             <div className="relative">
               <Input
-                className="w-60"
+                className="w-64"
                 placeholder="Search users... (min. 3 characters)"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 onKeyDown={handleSearchSubmit}
+                onFocus={() => setIsSearchFocused(true)}
+                onBlur={() => {
+                  setTimeout(() => setIsSearchFocused(false), 200);
+                }}
               />
-              {searchResults.length > 0 && search.length >= 3 && (
-                <div className="absolute top-full mt-2 w-full bg-background border rounded-md shadow-lg z-50">
+              {searchResults.length > 0 && search.length >= 3 && isSearchFocused && (
+                <div className="absolute top-full mt-2 w-full bg-background border rounded-md shadow-lg z-50 overflow-hidden">
                   {searchResults.map((result) => (
                     <div
                       key={result.id}
-                      className="p-2 hover:bg-muted cursor-pointer"
-                      onClick={() => {
-                        setLocation(`/profile/${result.id}`);
-                        setSearch('');
-                      }}
+                      className="p-3 hover:bg-muted cursor-pointer border-b last:border-b-0 transition-colors"
+                      onClick={() => navigateToProfile(result.id)}
                     >
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
                           <AvatarImage src={result.avatar || undefined} />
                           <AvatarFallback>
-                            {result.displayName?.[0] ?? result.username[0]}
+                            {result.displayName?.[0]?.toUpperCase() ?? result.username[0].toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
                         <div>
@@ -145,6 +152,11 @@ export default function Navbar() {
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+              {isLoading && search.length >= 3 && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
                 </div>
               )}
             </div>
