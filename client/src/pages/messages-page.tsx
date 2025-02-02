@@ -35,21 +35,22 @@ export default function MessagesPage() {
     enabled: !!user,
   });
 
+  // Get users for matches
+  const { data: matchedUsers } = useQuery<SelectUser[]>({
+    queryKey: ["/api/users/matched"],
+    enabled: !!matches?.length,
+  });
+
   const { data: conversations } = useQuery<SelectUser[]>({
     queryKey: ["/api/messages/conversations"],
   });
 
   // Combine matches and conversations to get all possible chat partners
   const chatPartners = [...(conversations || [])];
-  if (matches) {
-    matches.forEach(match => {
-      const partnerId = match.userId1 === user?.id ? match.userId2 : match.userId1;
-      if (!chatPartners.some(p => p.id === partnerId)) {
-        // Add matched user to chat partners if they're not already in conversations
-        const matchedUser = conversations?.find(c => c.id === partnerId);
-        if (matchedUser) {
-          chatPartners.push(matchedUser);
-        }
+  if (matchedUsers) {
+    matchedUsers.forEach(matchedUser => {
+      if (!chatPartners.some(p => p.id === matchedUser.id)) {
+        chatPartners.push(matchedUser);
       }
     });
   }

@@ -94,7 +94,14 @@ export function registerRoutes(app: Express): Server {
     if (!query) return res.json([]);
 
     const searchResults = await db
-      .select()
+      .select({
+        id: users.id,
+        username: users.username,
+        displayName: users.displayName,
+        avatar: users.avatar,
+        gamerType: users.gamerType,
+        bio: users.bio
+      })
       .from(users)
       .where(
         or(
@@ -159,6 +166,38 @@ export function registerRoutes(app: Express): Server {
     res.json(userMatches);
   });
 
+  // Add this inside registerRoutes function, after the matches routes
+  app.get("/api/users/matched", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+
+    const userMatches = await db
+      .select()
+      .from(matches)
+      .where(
+        or(
+          eq(matches.userId1, req.user.id),
+          eq(matches.userId2, req.user.id)
+        )
+      );
+
+    const matchedUserIds = userMatches.map(match => 
+      match.userId1 === req.user.id ? match.userId2 : match.userId1
+    );
+
+    if (matchedUserIds.length === 0) {
+      return res.json([]);
+    }
+
+    const matchedUsers = await db
+      .select()
+      .from(users)
+      .where(
+        sql`${users.id} IN (${matchedUserIds.join(',')})`
+      );
+
+    res.json(matchedUsers);
+  });
+    
   // Message routes
   app.get("/api/messages/conversations", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");

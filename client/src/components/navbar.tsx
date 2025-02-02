@@ -81,11 +81,15 @@ export default function Navbar() {
               <span className="hidden xl:inline-flex">Search users...</span>
             </Button>
             <CommandDialog open={open} onOpenChange={setOpen}>
-              <CommandInput placeholder="Search users..." />
+              <CommandInput 
+                placeholder="Search users..." 
+                value={search}
+                onValueChange={setSearch}
+              />
               <CommandList>
                 <CommandEmpty>No results found.</CommandEmpty>
                 <CommandGroup>
-                  {searchResults?.map((result: any) => (
+                  {searchResults?.map((result) => (
                     <CommandItem
                       key={result.id}
                       onSelect={() => {
