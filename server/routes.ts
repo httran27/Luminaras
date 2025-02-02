@@ -290,6 +290,40 @@ export function registerRoutes(app: Express): Server {
     res.json({ ...group, members });
   });
 
+    app.delete("/api/groups/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+
+    const groupId = parseInt(req.params.id);
+
+    // Check if user is admin of the group
+    const [member] = await db
+      .select()
+      .from(groupMembers)
+      .where(
+        and(
+          eq(groupMembers.groupId, groupId),
+          eq(groupMembers.userId, req.user.id),
+          eq(groupMembers.role, "admin")
+        )
+      );
+
+    if (!member) {
+      return res.status(403).send("Only group admins can delete groups");
+    }
+
+    // Delete group and related data
+    await db.transaction(async (tx) => {
+      // Delete group messages
+      await tx.delete(groupMessages).where(eq(groupMessages.groupId, groupId));
+      // Delete group members
+      await tx.delete(groupMembers).where(eq(groupMembers.groupId, groupId));
+      // Delete the group
+      await tx.delete(groups).where(eq(groups.id, groupId));
+    });
+
+    res.sendStatus(200);
+  });
+
   app.post("/api/groups/:id/messages", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
 

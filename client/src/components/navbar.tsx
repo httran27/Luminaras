@@ -21,9 +21,8 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-  CommandSeparator,
 } from "@/components/ui/command";
-import { User, MessageSquare, Search, Users, Home } from "lucide-react";
+import { User, MessageSquare, Search, Users } from "lucide-react";
 
 export default function Navbar() {
   const { user, logoutMutation } = useAuth();
@@ -32,8 +31,8 @@ export default function Navbar() {
   const [, setLocation] = useLocation();
 
   const { data: searchResults } = useQuery({
-    queryKey: ["/api/users/search", search],
-    enabled: search.length > 0,
+    queryKey: ["/api/users/search", { q: search }],
+    enabled: search.length > 0 && open,
   });
 
   return (
@@ -84,14 +83,14 @@ export default function Navbar() {
             </Button>
             <CommandDialog open={open} onOpenChange={setOpen}>
               <CommandInput 
-                placeholder="Search users..." 
+                placeholder="Search users..."
                 value={search}
                 onValueChange={setSearch}
               />
               <CommandList>
                 <CommandEmpty>No users found.</CommandEmpty>
                 <CommandGroup heading="Search Results">
-                  {searchResults?.map((result: any) => (
+                  {searchResults?.map((result) => (
                     <CommandItem
                       key={result.id}
                       className="flex flex-col items-start p-4"
@@ -151,18 +150,6 @@ export default function Navbar() {
                       </div>
                     </CommandItem>
                   ))}
-                </CommandGroup>
-                <CommandSeparator />
-                <CommandGroup>
-                  <CommandItem
-                    onSelect={() => {
-                      setOpen(false);
-                      setLocation('/');
-                    }}
-                  >
-                    <Home className="mr-2 h-4 w-4" />
-                    Back to Home
-                  </CommandItem>
                 </CommandGroup>
               </CommandList>
             </CommandDialog>

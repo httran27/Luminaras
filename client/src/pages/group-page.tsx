@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useParams } from "wouter";
+import { useParams, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useState, useEffect, useRef } from "react";
@@ -15,7 +15,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Send, Users } from "lucide-react";
+import { Send, Users, Trash2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import type { SelectGroup, SelectUser } from "@db/schema";
 
 interface GroupMessage {
@@ -37,6 +38,8 @@ interface GroupWithMembers extends SelectGroup {
 export default function GroupPage() {
   const { id } = useParams();
   const { user } = useAuth();
+  const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [messageInput, setMessageInput] = useState("");
   const [ws, setWs] = useState<WebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -47,6 +50,26 @@ export default function GroupPage() {
 
   const { data: messages = [], refetch: refetchMessages } = useQuery<GroupMessage[]>({
     queryKey: [`/api/groups/${id}/messages`],
+  });
+
+  const deleteGroupMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("DELETE", `/api/groups/${id}`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Group deleted",
+        description: "The group has been successfully deleted.",
+      });
+      setLocation("/groups");
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 
   const sendMessageMutation = useMutation({
@@ -66,7 +89,7 @@ export default function GroupPage() {
     const wsUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${
       window.location.host
     }/ws/groups/${id}?userId=${user.id}`;
-    
+
     const websocket = new WebSocket(wsUrl);
     websocket.onmessage = () => {
       refetchMessages();
@@ -82,13 +105,36 @@ export default function GroupPage() {
 
   if (!group) return null;
 
+  const isAdmin = group.members.some(
+    (member) => member.id === user?.id && member.role === "admin"
+  );
+
   return (
     <div className="max-w-6xl mx-auto grid lg:grid-cols-[1fr_300px] gap-6">
       {/* Main chat area */}
       <Card className="h-[calc(100vh-12rem)]">
         <CardHeader className="border-b">
-          <CardTitle>{group.name}</CardTitle>
-          <CardDescription>{group.description}</CardDescription>
+          <div className="flex justify-between items-start">
+            <div>
+              <CardTitle>{group.name}</CardTitle>
+              <CardDescription>{group.description}</CardDescription>
+            </div>
+            {isAdmin && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => {
+                  if (window.confirm("Are you sure you want to delete this group? This action cannot be undone.")) {
+                    deleteGroupMutation.mutate();
+                  }
+                }}
+                disabled={deleteGroupMutation.isPending}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete Group
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="p-0 flex flex-col h-[calc(100vh-16rem)]">
           <ScrollArea className="flex-1 p-4">
