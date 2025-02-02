@@ -33,23 +33,26 @@ export function MatchCard({ user, onSwipe }: MatchCardProps) {
           onSwipe(swipe > 0 ? "right" : "left");
         }
       }}
-      className="cursor-grab active:cursor-grabbing absolute w-full"
+      className="cursor-grab active:cursor-grabbing absolute w-full perspective-1000"
       whileTap={{ cursor: "grabbing" }}
       initial={{ scale: 1 }}
       whileDrag={{ scale: 1.05 }}
-      animate={{ scale: 1, x: 0, rotateY: isFlipped ? 180 : 0 }}
+      animate={{ scale: 1 }}
       transition={{
         type: "spring",
         stiffness: 300,
         damping: 20,
         mass: 0.5
       }}
-      onClick={() => setIsFlipped(!isFlipped)}
     >
-      <Card className={`w-80 bg-card mx-auto transform-style-3d transition-transform duration-500 ${isFlipped ? 'rotate-y-180' : ''}`}>
-        <CardContent className="p-6">
-          {!isFlipped ? (
-            // Front of card
+      <div 
+        className={`transition-transform duration-500 transform-style-preserve-3d ${
+          isFlipped ? 'rotate-y-180' : ''
+        }`}
+        onClick={() => setIsFlipped(!isFlipped)}
+      >
+        <Card className="w-80 bg-card mx-auto backface-hidden">
+          <CardContent className="p-6">
             <div className="flex flex-col items-center gap-4">
               <Avatar className="h-24 w-24 border-2 border-primary/20">
                 <AvatarImage src={user.avatar || undefined} />
@@ -78,9 +81,12 @@ export function MatchCard({ user, onSwipe }: MatchCardProps) {
                 ))}
               </div>
             </div>
-          ) : (
-            // Back of card (flipped)
-            <div className="flex flex-col gap-4 rotate-y-180">
+          </CardContent>
+        </Card>
+
+        <Card className="w-80 bg-card mx-auto backface-hidden absolute inset-0 rotate-y-180">
+          <CardContent className="p-6">
+            <div className="flex flex-col gap-4">
               <div className="space-y-4">
                 <div className="space-y-2">
                   <h3 className="font-semibold flex items-center gap-2">
@@ -126,33 +132,33 @@ export function MatchCard({ user, onSwipe }: MatchCardProps) {
                 </div>
               </div>
             </div>
-          )}
+          </CardContent>
+        </Card>
+      </div>
 
-          <div className="flex gap-2 pt-4">
-            <Button 
-              variant="destructive"
-              size="lg"
-              onClick={(e) => {
-                e.stopPropagation();
-                onSwipe("left");
-              }}
-              className="shadow-lg hover:shadow-xl transition-shadow"
-            >
-              Pass
-            </Button>
-            <Button 
-              size="lg"
-              onClick={(e) => {
-                e.stopPropagation();
-                onSwipe("right");
-              }}
-              className="shadow-lg hover:shadow-xl transition-shadow"
-            >
-              Connect
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex gap-2 pt-4 mt-4">
+        <Button 
+          variant="destructive"
+          size="lg"
+          onClick={(e) => {
+            e.stopPropagation();
+            onSwipe("left");
+          }}
+          className="shadow-lg hover:shadow-xl transition-shadow"
+        >
+          Pass
+        </Button>
+        <Button 
+          size="lg"
+          onClick={(e) => {
+            e.stopPropagation();
+            onSwipe("right");
+          }}
+          className="shadow-lg hover:shadow-xl transition-shadow"
+        >
+          Connect
+        </Button>
+      </div>
     </motion.div>
   );
 }
