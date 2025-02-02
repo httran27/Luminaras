@@ -33,7 +33,7 @@ export function MatchCard({ user, onSwipe }: MatchCardProps) {
           onSwipe(swipe > 0 ? "right" : "left");
         }
       }}
-      className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[320px] perspective-1000"
+      className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[400px] perspective-1000"
       whileTap={{ cursor: "grabbing" }}
       initial={{ scale: 1 }}
       whileDrag={{ scale: 1.05 }}
@@ -53,22 +53,22 @@ export function MatchCard({ user, onSwipe }: MatchCardProps) {
       >
         {/* Front of card */}
         <Card className="w-full bg-card backface-hidden">
-          <CardContent className="p-6">
-            <div className="flex flex-col items-center gap-4">
-              <Avatar className="h-24 w-24 border-2 border-primary/20">
+          <CardContent className="p-8">
+            <div className="flex flex-col items-center gap-6">
+              <Avatar className="h-32 w-32 border-2 border-primary/20">
                 <AvatarImage src={user.avatar || undefined} />
                 <AvatarFallback>
                   {user.displayName?.[0]?.toUpperCase() ?? user.username[0].toUpperCase()}
                 </AvatarFallback>
               </Avatar>
 
-              <div className="text-center space-y-2">
-                <h3 className="text-xl font-semibold">
+              <div className="text-center space-y-3">
+                <h3 className="text-2xl font-semibold">
                   {user.displayName ?? user.username}
                 </h3>
                 {user.gamerType && (
-                  <Badge variant="secondary" className="mb-2">
-                    <Gamepad className="w-3 h-3 mr-1" />
+                  <Badge variant="secondary" className="text-base px-4 py-1">
+                    <Gamepad className="w-4 h-4 mr-2" />
                     {user.gamerType}
                   </Badge>
                 )}
@@ -76,7 +76,7 @@ export function MatchCard({ user, onSwipe }: MatchCardProps) {
 
               <div className="flex flex-wrap gap-2 justify-center">
                 {user.gameInterests?.map((game) => (
-                  <Badge key={game} variant="outline">
+                  <Badge key={game} variant="outline" className="text-sm">
                     {game}
                   </Badge>
                 ))}
@@ -87,20 +87,20 @@ export function MatchCard({ user, onSwipe }: MatchCardProps) {
 
         {/* Back of card */}
         <Card className="w-full bg-card backface-hidden absolute inset-0 rotate-y-180">
-          <CardContent className="p-6">
-            <div className="flex flex-col gap-4">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <h3 className="font-semibold flex items-center gap-2">
-                    <Gamepad className="h-4 w-4" />
+          <CardContent className="p-8">
+            <div className="flex flex-col gap-6">
+              <div className="space-y-6">
+                <div className="space-y-3">
+                  <h3 className="text-xl font-semibold flex items-center gap-2">
+                    <Gamepad className="h-5 w-5" />
                     Gaming Preferences
                   </h3>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-base text-muted-foreground">
                     Level: {user.gamingLevel || "Not specified"}
                   </p>
-                  <div className="flex flex-wrap gap-1">
+                  <div className="flex flex-wrap gap-2">
                     {user.gameInterests?.map((game) => (
-                      <Badge key={game} variant="outline" className="text-xs">
+                      <Badge key={game} variant="outline" className="text-sm">
                         {game}
                       </Badge>
                     ))}
@@ -108,14 +108,14 @@ export function MatchCard({ user, onSwipe }: MatchCardProps) {
                 </div>
 
                 {user.musicGenres && user.musicGenres.length > 0 && (
-                  <div className="space-y-2">
-                    <h3 className="font-semibold flex items-center gap-2">
-                      <Music className="h-4 w-4" />
+                  <div className="space-y-3">
+                    <h3 className="text-xl font-semibold flex items-center gap-2">
+                      <Music className="h-5 w-5" />
                       Music Preferences
                     </h3>
-                    <div className="flex flex-wrap gap-1">
+                    <div className="flex flex-wrap gap-2">
                       {user.musicGenres.map((genre) => (
-                        <Badge key={genre} variant="outline" className="text-xs">
+                        <Badge key={genre} variant="outline" className="text-sm">
                           {genre}
                         </Badge>
                       ))}
@@ -123,12 +123,12 @@ export function MatchCard({ user, onSwipe }: MatchCardProps) {
                   </div>
                 )}
 
-                <div className="space-y-2">
-                  <h3 className="font-semibold flex items-center gap-2">
-                    <Users className="h-4 w-4" />
+                <div className="space-y-3">
+                  <h3 className="text-xl font-semibold flex items-center gap-2">
+                    <Users className="h-5 w-5" />
                     Bio
                   </h3>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-base text-muted-foreground">
                     {user.bio || "No bio available"}
                   </p>
                 </div>
@@ -138,7 +138,7 @@ export function MatchCard({ user, onSwipe }: MatchCardProps) {
         </Card>
       </div>
 
-      <div className="flex gap-2 pt-4 mt-4 justify-center">
+      <div className="flex gap-4 pt-6 mt-4 justify-center">
         <Button 
           variant="destructive"
           size="lg"
@@ -146,7 +146,7 @@ export function MatchCard({ user, onSwipe }: MatchCardProps) {
             e.stopPropagation();
             onSwipe("left");
           }}
-          className="shadow-lg hover:shadow-xl transition-shadow"
+          className="shadow-lg hover:shadow-xl transition-shadow px-8"
         >
           Pass
         </Button>
@@ -156,7 +156,7 @@ export function MatchCard({ user, onSwipe }: MatchCardProps) {
             e.stopPropagation();
             onSwipe("right");
           }}
-          className="shadow-lg hover:shadow-xl transition-shadow"
+          className="shadow-lg hover:shadow-xl transition-shadow px-8"
         >
           Connect
         </Button>

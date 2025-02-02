@@ -64,7 +64,7 @@ export default function MatchesPage() {
   }
 
   return (
-    <div className="max-w-md mx-auto flex flex-col items-center gap-8">
+    <div className="max-w-2xl mx-auto flex flex-col items-center gap-8 px-4">
       <div className="text-center space-y-2">
         <h1 className="text-3xl font-bold">Quick Match</h1>
         <p className="text-muted-foreground">
@@ -72,7 +72,7 @@ export default function MatchesPage() {
         </p>
       </div>
 
-      <div className="relative w-full h-[550px]">
+      <div className="relative w-full h-[650px]">
         {potentialMatches.map((match, index) => (
           <div
             key={match.id}
