@@ -98,6 +98,8 @@ export function registerRoutes(app: Express): Server {
     const query = req.query.q as string;
     if (!query || query.length < 3) return res.json([]);
 
+    console.log('Search query:', query); // Debug log
+
     const searchResults = await db
       .select({
         id: users.id,
@@ -115,6 +117,7 @@ export function registerRoutes(app: Express): Server {
       )
       .limit(10);
 
+    console.log('Search results:', searchResults); // Debug log
     res.json(searchResults);
   });
 
