@@ -130,7 +130,13 @@ export function registerRoutes(app: Express): Server {
     if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
 
     const potentialMatches = await db
-      .select()
+      .select({
+        id: users.id,
+        username: users.username,
+        displayName: users.displayName,
+        avatar: users.avatar,
+        gamerType: users.gamerType,
+      })
       .from(users)
       .where(
         sql`${users.id} != ${req.user.id} 
