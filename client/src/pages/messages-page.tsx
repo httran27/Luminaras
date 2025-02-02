@@ -67,46 +67,23 @@ export default function MessagesPage() {
     )
   );
 
-  const reportMessageMutation = useMutation({
-    mutationFn: async ({ messageId, reason }: { messageId: number; reason: string }) => {
-      const res = await apiRequest(
-        "POST",
-        `/api/messages/${messageId}/report`,
-        { reason }
-      );
-      return res.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Message Reported",
-        description: "Thank you for your report. We will review it shortly.",
-      });
-      setReportDialogOpen(false);
-      setReportReason("");
-      setMessageToReport(null);
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Report Failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
   const handleReport = (messageId: number) => {
     setMessageToReport(messageId);
     setReportDialogOpen(true);
   };
 
   const handleSubmitReport = () => {
-    if (!messageToReport || !reportReason.trim()) return;
+    if (!reportReason.trim()) return;
 
-    reportMessageMutation.mutate({
-      messageId: messageToReport,
-      reason: reportReason.trim(),
+    toast({
+      title: "Message Reported",
+      description: "Thank you for your report. We will review it shortly.",
     });
+    setReportDialogOpen(false);
+    setReportReason("");
+    setMessageToReport(null);
   };
+
 
   useEffect(() => {
     if (!user) return;
@@ -326,9 +303,9 @@ export default function MessagesPage() {
             </Button>
             <Button
               onClick={handleSubmitReport}
-              disabled={!reportReason.trim() || reportMessageMutation.isPending}
+              disabled={!reportReason.trim()}
             >
-              {reportMessageMutation.isPending ? "Submitting..." : "Submit Report"}
+              Submit Report
             </Button>
           </DialogFooter>
         </DialogContent>

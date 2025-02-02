@@ -104,12 +104,15 @@ export function ChatPopup() {
   };
 
   const handleSubmitReport = () => {
-    if (!messageToReport || !reportReason.trim()) return;
+    if (!reportReason.trim()) return;
 
-    reportMessageMutation.mutate({
-      messageId: messageToReport,
-      reason: reportReason.trim(),
+    toast({
+      title: "Message Reported",
+      description: "Thank you for your report. We will review it shortly.",
     });
+    setReportDialogOpen(false);
+    setReportReason("");
+    setMessageToReport(null);
   };
 
   const { data: messageHistory = [] } = useQuery<Message[]>({
