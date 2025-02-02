@@ -91,7 +91,6 @@ export function registerRoutes(app: Express): Server {
     res.json(user);
   });
 
-  // Add this inside registerRoutes function, after the profile routes
   app.get("/api/users/search", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
 
@@ -102,17 +101,15 @@ export function registerRoutes(app: Express): Server {
 
     try {
       const searchResults = await db
-        .select({
-          id: users.id,
-          username: users.username,
-          displayName: users.displayName,
-          avatar: users.avatar,
-          gamerType: users.gamerType,
-        })
+        .select()
         .from(users)
         .where(
-          sql`LOWER(${users.username}) LIKE ${`%${query.toLowerCase()}%`}`
+          and(
+            sql`${users.id} != ${req.user.id}`,
+            sql`LOWER(${users.username}) LIKE ${`%${query.toLowerCase()}%`}`
+          )
         )
+        .orderBy(desc(users.id))
         .limit(10);
 
       console.log('Search results:', searchResults); // Debug log
@@ -213,7 +210,6 @@ export function registerRoutes(app: Express): Server {
     res.json(conversations);
   });
 
-  // Add this inside registerRoutes function after the conversations route
   app.post("/api/messages", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
 

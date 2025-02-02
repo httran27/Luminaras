@@ -56,6 +56,7 @@ export default function Navbar() {
         // Navigate to the first user's profile
         setOpen(false);
         setLocation(`/profile/${results.data[0].id}`);
+        setSearch(''); // Clear search after navigation
       } else {
         toast({
           title: "No users found",
