@@ -5,7 +5,7 @@ import { Logo } from "./logo";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import {
   DropdownMenu,
@@ -24,7 +24,8 @@ export default function Navbar() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handler = debounce((value: string) => {
@@ -34,6 +35,17 @@ export default function Navbar() {
     handler(search);
     return () => handler.cancel();
   }, [search]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowResults(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const { data: searchResults = [], isLoading } = useQuery<SelectUser[]>({
     queryKey: ["/api/users/search", { q: debouncedSearch }],
@@ -46,7 +58,7 @@ export default function Navbar() {
         if (searchResults && searchResults.length > 0) {
           setLocation(`/profile/${searchResults[0].id}`);
           setSearch('');
-          setIsSearchFocused(false);
+          setShowResults(false);
         } else {
           toast({
             title: "No users found",
@@ -67,42 +79,44 @@ export default function Navbar() {
   const navigateToProfile = (userId: number) => {
     setLocation(`/profile/${userId}`);
     setSearch('');
-    setIsSearchFocused(false);
+    setShowResults(false);
   };
 
   return (
     <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center px-4">
-        <Link href="/">
-          <Logo className="mr-8" />
-        </Link>
+        <div className="mr-8">
+          <Link href="/">
+            <Logo />
+          </Link>
+        </div>
 
         <div className="flex gap-6 flex-1">
           {user && (
             <>
               <Link href="/matches">
-                <span className={`text-sm font-medium transition-colors hover:text-primary ${
+                <span className={`text-sm font-medium transition-colors hover:text-primary cursor-pointer ${
                   location === "/matches" ? "text-primary" : "text-muted-foreground"
                 }`}>
                   Quick Match
                 </span>
               </Link>
               <Link href="/messages">
-                <span className={`text-sm font-medium transition-colors hover:text-primary ${
+                <span className={`text-sm font-medium transition-colors hover:text-primary cursor-pointer ${
                   location === "/messages" ? "text-primary" : "text-muted-foreground"
                 }`}>
                   Messages
                 </span>
               </Link>
               <Link href="/groups">
-                <span className={`text-sm font-medium transition-colors hover:text-primary ${
+                <span className={`text-sm font-medium transition-colors hover:text-primary cursor-pointer ${
                   location === "/groups" ? "text-primary" : "text-muted-foreground"
                 }`}>
                   Groups
                 </span>
               </Link>
               <Link href="/news">
-                <span className={`text-sm font-medium transition-colors hover:text-primary ${
+                <span className={`text-sm font-medium transition-colors hover:text-primary cursor-pointer ${
                   location === "/news" ? "text-primary" : "text-muted-foreground"
                 }`}>
                   News
@@ -114,19 +128,16 @@ export default function Navbar() {
 
         {user && (
           <div className="flex items-center gap-4">
-            <div className="relative">
+            <div className="relative" ref={searchRef}>
               <Input
                 className="w-64"
                 placeholder="Search users... (min. 3 characters)"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 onKeyDown={handleSearchSubmit}
-                onFocus={() => setIsSearchFocused(true)}
-                onBlur={() => {
-                  setTimeout(() => setIsSearchFocused(false), 200);
-                }}
+                onFocus={() => setShowResults(true)}
               />
-              {searchResults.length > 0 && search.length >= 3 && isSearchFocused && (
+              {searchResults.length > 0 && search.length >= 3 && showResults && (
                 <div className="absolute top-full mt-2 w-full bg-background border rounded-md shadow-lg z-50 overflow-hidden">
                   {searchResults.map((result) => (
                     <div
