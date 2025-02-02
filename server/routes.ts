@@ -63,10 +63,15 @@ export function registerRoutes(app: Express): Server {
 
   // Profile routes
   app.get("/api/users/:id", async (req, res) => {
+    const userId = parseInt(req.params.id);
+    if (isNaN(userId)) {
+      return res.status(400).send("Invalid user ID");
+    }
+
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.id, parseInt(req.params.id)));
+      .where(eq(users.id, userId));
 
     if (!user) return res.status(404).send("User not found");
     res.json(user);
@@ -91,10 +96,16 @@ export function registerRoutes(app: Express): Server {
     if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
 
     const query = req.query.q as string;
-    if (!query) return res.json([]);
+    if (!query || query.length < 3) return res.json([]);
 
     const searchResults = await db
-      .select()
+      .select({
+        id: users.id,
+        username: users.username,
+        displayName: users.displayName,
+        avatar: users.avatar,
+        gamerType: users.gamerType,
+      })
       .from(users)
       .where(
         or(
