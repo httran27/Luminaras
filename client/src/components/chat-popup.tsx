@@ -3,10 +3,18 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
-import { MessageSquare, X, Send, UserPlus } from "lucide-react";
+import { MessageSquare, X, Send, UserPlus, MoreVertical, Flag } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Message {
   id?: number;
@@ -20,11 +28,13 @@ interface Conversation {
   id: number;
   username: string;
   displayName: string | null;
+  avatar: string | null;
   lastMessage?: string;
 }
 
 export function ChatPopup() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [activeChat, setActiveChat] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -49,6 +59,39 @@ export function ChatPopup() {
       (match.userId2 === user?.id && match.userId1 === partner.id)
     )
   );
+
+  const reportMessageMutation = useMutation({
+    mutationFn: async ({ messageId, reason }: { messageId: number; reason: string }) => {
+      const res = await apiRequest(
+        "POST",
+        `/api/messages/${messageId}/report`,
+        { reason }
+      );
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Message Reported",
+        description: "Thank you for your report. We will review it shortly.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Report Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleReport = (messageId: number) => {
+    if (window.confirm("Are you sure you want to report this message? This action cannot be undone.")) {
+      reportMessageMutation.mutate({
+        messageId,
+        reason: "Inappropriate content",
+      });
+    }
+  };
 
   useEffect(() => {
     if (!user || !isOpen) return;
@@ -131,8 +174,22 @@ export function ChatPopup() {
                     {messages.map((msg, idx) => (
                       <div
                         key={idx}
-                        className={`flex ${msg.senderId === user.id ? 'justify-end' : 'justify-start'}`}
+                        className={`flex items-start gap-2 ${
+                          msg.senderId === user.id ? 'justify-end' : 'justify-start'
+                        }`}
                       >
+                        {msg.senderId !== user.id && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={() => msg.id && handleReport(msg.id)}
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
                         <div
                           className={`rounded-lg px-3 py-2 max-w-[80%] ${
                             msg.senderId === user.id

@@ -11,9 +11,16 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Send, UserPlus } from "lucide-react";
+import { Send, UserPlus, MoreVertical, Flag } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
+import { apiRequest } from "@/lib/queryClient";
 import type { SelectUser } from "@db/schema";
 
 interface Message {
@@ -49,6 +56,30 @@ export default function MessagesPage() {
     )
   );
 
+  const reportMessageMutation = useMutation({
+    mutationFn: async ({ messageId, reason }: { messageId: number; reason: string }) => {
+      const res = await apiRequest(
+        "POST",
+        `/api/messages/${messageId}/report`,
+        { reason }
+      );
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Message Reported",
+        description: "Thank you for your report. We will review it shortly.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Report Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   useEffect(() => {
     if (!user) return;
 
@@ -68,6 +99,15 @@ export default function MessagesPage() {
     setWs(websocket);
     return () => websocket.close();
   }, [user, selectedUser]);
+
+  const handleReport = (messageId: number) => {
+    if (window.confirm("Are you sure you want to report this message? This action cannot be undone.")) {
+      reportMessageMutation.mutate({
+        messageId,
+        reason: "Inappropriate content",
+      });
+    }
+  };
 
   const sendMessage = () => {
     if (!ws || !selectedUser || !messageInput.trim()) return;
@@ -142,29 +182,47 @@ export default function MessagesPage() {
         {selectedUser ? (
           <>
             <CardHeader className="border-b">
-              <CardTitle>
-                {selectedUser.displayName ?? selectedUser.username}
-              </CardTitle>
+              <CardTitle>{selectedUser.displayName ?? selectedUser.username}</CardTitle>
             </CardHeader>
-            <CardContent className="p-0 flex flex-col h-full">
+            <CardContent className="p-0 flex flex-col h-[calc(100vh-16rem)]">
               <ScrollArea className="flex-1 p-4">
                 <div className="space-y-4">
-                  {messages.map((message, i) => (
+                  {messages.map((message) => (
                     <div
-                      key={i}
-                      className={`flex items-start gap-2 ${
-                        message.senderId === user?.id
-                          ? "justify-end"
-                          : "justify-start"
+                      key={message.id}
+                      className={`flex gap-3 items-start ${
+                        message.senderId === user?.id ? "justify-end" : "justify-start"
                       }`}
                     >
                       {message.senderId !== user?.id && (
-                        <Avatar>
-                          <AvatarImage src={selectedUser.avatar || undefined} />
-                          <AvatarFallback>
-                            {selectedUser.displayName?.[0] ?? selectedUser.username[0]}
-                          </AvatarFallback>
-                        </Avatar>
+                        <>
+                          <Avatar>
+                            <AvatarImage src={selectedUser.avatar || undefined} />
+                            <AvatarFallback>
+                              {selectedUser.displayName?.[0] ?? selectedUser.username[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 hover:bg-muted"
+                              >
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start">
+                              <DropdownMenuItem
+                                onClick={() => handleReport(message.id)}
+                                className="text-destructive"
+                              >
+                                <Flag className="h-4 w-4 mr-2" />
+                                Report Message
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </>
                       )}
                       <div
                         className={`rounded-lg px-4 py-2 max-w-[70%] ${
