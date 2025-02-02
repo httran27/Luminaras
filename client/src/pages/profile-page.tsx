@@ -14,8 +14,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
-import { Trophy, Music, Link as LinkIcon, Gamepad, Youtube } from "lucide-react";
+import { useState, useRef } from "react";
+import { Trophy, Music, Link as LinkIcon, Gamepad, Youtube, Camera } from "lucide-react";
 import type { SelectUser } from "@db/schema";
 import {
   Select,
@@ -47,6 +47,7 @@ export default function ProfilePage() {
   const { user: currentUser } = useAuth();
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: user } = useQuery<SelectUser>({
     queryKey: [`/api/users/${id}`],
@@ -66,6 +67,40 @@ export default function ProfilePage() {
       });
     },
   });
+
+  const uploadAvatarMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('avatar', file);
+      const res = await fetch(`/api/users/${id}/avatar`, {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error('Failed to upload avatar');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/users/${id}`] });
+      toast({
+        title: "Avatar updated",
+        description: "Your profile picture has been updated successfully.",
+      });
+    },
+  });
+
+  const handleAvatarClick = () => {
+    if (isOwnProfile && fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      uploadAvatarMutation.mutate(file);
+    }
+  };
 
   if (!user) return null;
   const isOwnProfile = currentUser?.id === user.id;
@@ -103,12 +138,30 @@ export default function ProfilePage() {
         <CardContent className="p-6">
           <div className="flex flex-col sm:flex-row gap-6">
             <div className="relative">
-              <Avatar className="h-24 w-24 -mt-12 border-4 border-background">
+              <Avatar 
+                className={`h-24 w-24 -mt-12 border-4 border-background ${isOwnProfile ? 'cursor-pointer hover:opacity-90' : ''}`}
+                onClick={handleAvatarClick}
+              >
                 <AvatarImage src={user.avatar || undefined} />
                 <AvatarFallback>
                   {user.displayName?.[0] ?? user.username[0]}
                 </AvatarFallback>
+                {isOwnProfile && (
+                  <div className="absolute bottom-0 right-0 bg-primary text-primary-foreground rounded-full p-1">
+                    <Camera className="h-4 w-4" />
+                  </div>
+                )}
               </Avatar>
+              {isOwnProfile && (
+                <Input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleFileChange}
+                  disabled={uploadAvatarMutation.isPending}
+                />
+              )}
             </div>
 
             <div className="flex-1 space-y-4">

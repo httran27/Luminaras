@@ -5,12 +5,61 @@ import { setupWebSocket } from "./ws";
 import { db } from "@db";
 import { users, matches, messages, achievements, groups, groupMembers, groupMessages } from "@db/schema";
 import { eq, and, desc, or, sql } from "drizzle-orm";
+import multer from "multer";
+import path from "path";
+import express from "express";
+
+// Configure multer for file upload
+const storage = multer.diskStorage({
+  destination: "./uploads/avatars",
+  filename: function (req, file, cb) {
+    cb(null, `${Date.now()}${path.extname(file.originalname)}`);
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: function (req, file, cb) {
+    const filetypes = /jpeg|jpg|png|gif|webp/;
+    const mimetype = filetypes.test(file.mimetype);
+    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+    if (mimetype && extname) {
+      return cb(null, true);
+    }
+    cb(new Error("Only images are allowed"));
+  }
+});
 
 export function registerRoutes(app: Express): Server {
   setupAuth(app);
 
   const httpServer = createServer(app);
   setupWebSocket(httpServer);
+
+  // Ensure uploads directory exists
+  app.use("/uploads", express.static("uploads"));
+
+  // Add avatar upload route
+  app.post("/api/users/:id/avatar", upload.single("avatar"), async (req, res) => {
+    if (!req.isAuthenticated() || req.user.id !== parseInt(req.params.id)) {
+      return res.status(403).send("Unauthorized");
+    }
+
+    if (!req.file) {
+      return res.status(400).send("No file uploaded");
+    }
+
+    const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+
+    const [user] = await db
+      .update(users)
+      .set({ avatar: avatarUrl })
+      .where(eq(users.id, req.user.id))
+      .returning();
+
+    res.json(user);
+  });
 
   // Profile routes
   app.get("/api/users/:id", async (req, res) => {
