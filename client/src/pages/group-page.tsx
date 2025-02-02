@@ -15,7 +15,13 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Send, Users, Trash2 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Send, Users, Trash2, MoreVertical, Flag } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { SelectGroup, SelectUser } from "@db/schema";
 
@@ -83,6 +89,39 @@ export default function GroupPage() {
     },
   });
 
+  const reportMessageMutation = useMutation({
+    mutationFn: async ({ messageId, reason }: { messageId: number; reason: string }) => {
+      const res = await apiRequest(
+        "POST",
+        `/api/messages/${messageId}/report`,
+        { reason }
+      );
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Message Reported",
+        description: "Thank you for your report. We will review it shortly.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Report Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleReport = (messageId: number) => {
+    if (window.confirm("Are you sure you want to report this message?")) {
+      reportMessageMutation.mutate({
+        messageId,
+        reason: "Inappropriate content", // You could add a reason selection dialog here
+      });
+    }
+  };
+
   useEffect(() => {
     if (!user || !id) return;
 
@@ -111,7 +150,6 @@ export default function GroupPage() {
 
   return (
     <div className="max-w-6xl mx-auto grid lg:grid-cols-[1fr_300px] gap-6">
-      {/* Main chat area */}
       <Card className="h-[calc(100vh-12rem)]">
         <CardHeader className="border-b">
           <div className="flex justify-between items-start">
@@ -142,17 +180,39 @@ export default function GroupPage() {
               {messages.map((message) => (
                 <div
                   key={message.id}
-                  className={`flex gap-3 ${
+                  className={`flex gap-3 items-start ${
                     message.sender.id === user?.id ? "justify-end" : "justify-start"
                   }`}
                 >
                   {message.sender.id !== user?.id && (
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={message.sender.avatar || undefined} />
-                      <AvatarFallback>
-                        {message.sender.displayName?.[0] ?? message.sender.username[0]}
-                      </AvatarFallback>
-                    </Avatar>
+                    <>
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={message.sender.avatar || undefined} />
+                        <AvatarFallback>
+                          {message.sender.displayName?.[0] ?? message.sender.username[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 hover:bg-muted"
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start">
+                          <DropdownMenuItem
+                            onClick={() => handleReport(message.id)}
+                            className="text-destructive"
+                          >
+                            <Flag className="h-4 w-4 mr-2" />
+                            Report Message
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </>
                   )}
                   <div
                     className={`rounded-lg px-4 py-2 max-w-[70%] ${
@@ -197,7 +257,6 @@ export default function GroupPage() {
         </CardContent>
       </Card>
 
-      {/* Members sidebar */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">

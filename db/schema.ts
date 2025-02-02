@@ -78,6 +78,15 @@ export const achievements = pgTable("achievements", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const messageReports = pgTable("message_reports", {
+  id: serial("id").primaryKey(),
+  messageId: integer("message_id").notNull().references(() => messages.id),
+  reporterId: integer("reporter_id").notNull().references(() => users.id),
+  reason: text("reason").notNull(),
+  status: text("status").notNull().default("pending"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const groupRelations = relations(groups, ({ many, one }) => ({
   members: many(groupMembers),
   messages: many(groupMessages),
@@ -109,12 +118,24 @@ export const groupMessageRelations = relations(groupMessages, ({ one }) => ({
   }),
 }));
 
+export const messageReportRelations = relations(messageReports, ({ one }) => ({
+  message: one(messages, {
+    fields: [messageReports.messageId],
+    references: [messages.id],
+  }),
+  reporter: one(users, {
+    fields: [messageReports.reporterId],
+    references: [users.id],
+  }),
+}));
+
 export const userRelations = relations(users, ({ many }) => ({
   sentMessages: many(messages, { relationName: "sender" }),
   receivedMessages: many(messages, { relationName: "receiver" }),
   achievements: many(achievements),
   groupMemberships: many(groupMembers),
   createdGroups: many(groups),
+  reports: many(messageReports),
 }));
 
 export const messageRelations = relations(messages, ({ one }) => ({

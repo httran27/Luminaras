@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { setupWebSocket } from "./ws";
 import { db } from "@db";
-import { users, matches, messages, achievements, groups, groupMembers, groupMessages } from "@db/schema";
+import { users, matches, messages, achievements, groups, groupMembers, groupMessages, messageReports } from "@db/schema";
 import { eq, and, desc, or, sql } from "drizzle-orm";
 import multer from "multer";
 import path from "path";
@@ -252,6 +252,33 @@ export function registerRoutes(app: Express): Server {
 
     res.json(message);
   });
+
+    // Add new routes for message reports
+  app.post("/api/messages/:messageId/report", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+
+    const messageId = parseInt(req.params.messageId);
+    const { reason } = req.body;
+
+    try {
+      const [report] = await db
+        .insert(messageReports)
+        .values({
+          messageId,
+          reporterId: req.user.id,
+          reason,
+          status: "pending",
+          createdAt: new Date(),
+        })
+        .returning();
+
+      res.json(report);
+    } catch (error) {
+      console.error("Report creation error:", error);
+      res.status(500).json({ error: "Failed to create report" });
+    }
+  });
+
 
   // Achievement routes
   app.post("/api/achievements", async (req, res) => {
