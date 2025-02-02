@@ -100,25 +100,27 @@ export function registerRoutes(app: Express): Server {
 
     console.log('Search query:', query); // Debug log
 
-    const searchResults = await db
-      .select({
-        id: users.id,
-        username: users.username,
-        displayName: users.displayName,
-        avatar: users.avatar,
-        gamerType: users.gamerType,
-      })
-      .from(users)
-      .where(
-        or(
-          sql`LOWER(${users.username}) LIKE ${`%${query.toLowerCase()}%`}`,
-          sql`LOWER(COALESCE(${users.displayName}, '')) LIKE ${`%${query.toLowerCase()}%`}`
+    try {
+      const searchResults = await db
+        .select({
+          id: users.id,
+          username: users.username,
+          displayName: users.displayName,
+          avatar: users.avatar,
+          gamerType: users.gamerType,
+        })
+        .from(users)
+        .where(
+          sql`LOWER(${users.username}) LIKE ${`%${query.toLowerCase()}%`}`
         )
-      )
-      .limit(10);
+        .limit(10);
 
-    console.log('Search results:', searchResults); // Debug log
-    res.json(searchResults);
+      console.log('Search results:', searchResults); // Debug log
+      res.json(searchResults);
+    } catch (error) {
+      console.error('Search error:', error);
+      res.status(500).json({ error: 'Failed to search users' });
+    }
   });
 
   // Match routes - Find only users
