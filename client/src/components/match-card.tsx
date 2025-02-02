@@ -33,7 +33,7 @@ export function MatchCard({ user, onSwipe }: MatchCardProps) {
           onSwipe(swipe > 0 ? "right" : "left");
         }
       }}
-      className="absolute top-0 left-1/2 -translate-x-[45%] w-full max-w-[400px] perspective-1000"
+      className="absolute left-1/2 -translate-x-1/2 w-[400px] perspective-1000"
       whileTap={{ cursor: "grabbing" }}
       initial={{ scale: 1 }}
       whileDrag={{ scale: 1.05 }}
