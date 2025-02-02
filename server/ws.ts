@@ -40,9 +40,9 @@ export function setupWebSocket(server: Server) {
         ws.on("message", (data) => {
           try {
             const message: Message = JSON.parse(data.toString());
-            if (message.receiverId) {
+            if (message.receiverId && message.type === "message") {
               const receiverWs = clients.get(message.receiverId);
-
+              // Only send to the specific receiver if they are connected
               if (receiverWs?.readyState === WebSocket.OPEN) {
                 receiverWs.send(JSON.stringify(message));
               }
@@ -77,7 +77,7 @@ export function setupWebSocket(server: Server) {
           try {
             const message: Message = JSON.parse(data.toString());
             if (message.groupId === groupId) {
-              // Broadcast to all connected group members
+              // Broadcast to all connected group members except sender
               const groupMembers = groupClients.get(groupId) || new Set();
               groupMembers.forEach(memberId => {
                 const memberWs = clients.get(memberId);
