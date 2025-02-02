@@ -214,7 +214,7 @@ export function registerRoutes(app: Express): Server {
     res.json(userAchievements);
   });
 
-  // Group routes
+    // Group routes
   app.post("/api/groups", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
 
@@ -232,19 +232,6 @@ export function registerRoutes(app: Express): Server {
       userId: req.user.id,
       role: "admin",
     });
-
-    // Add initial members if provided
-    if (req.body.initialMembers && Array.isArray(req.body.initialMembers)) {
-      await Promise.all(
-        req.body.initialMembers.map(async (memberId: number) => {
-          await db.insert(groupMembers).values({
-            groupId: group.id,
-            userId: memberId,
-            role: "member",
-          });
-        })
-      );
-    }
 
     res.json(group);
   });
@@ -303,7 +290,7 @@ export function registerRoutes(app: Express): Server {
     res.json({ ...group, members });
   });
 
-  app.delete("/api/groups/:id", async (req, res) => {
+    app.delete("/api/groups/:id", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
 
     const groupId = parseInt(req.params.id);
@@ -401,56 +388,7 @@ export function registerRoutes(app: Express): Server {
 
     res.json(messages);
   });
-  // Add this inside registerRoutes function, after the existing group routes
-  app.get("/api/groups/:id/add-member", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
 
-    const groupId = parseInt(req.params.id);
-    const newMemberId = parseInt(req.query.userId as string);
-
-    // Check if user is a member of the group
-    const [member] = await db
-      .select()
-      .from(groupMembers)
-      .where(
-        and(
-          eq(groupMembers.groupId, groupId),
-          eq(groupMembers.userId, req.user.id)
-        )
-      );
-
-    if (!member) {
-      return res.status(403).send("Only group members can add new members");
-    }
-
-    // Add the new member
-    await db.insert(groupMembers).values({
-      groupId,
-      userId: newMemberId,
-      role: "member",
-    });
-
-    res.sendStatus(200);
-  });
-
-  // Add endpoint to get all users for member selection
-  app.get("/api/users", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-
-    const users = await db
-      .select({
-        id: users.id,
-        username: users.username,
-        displayName: users.displayName,
-        avatar: users.avatar,
-        gamerType: users.gamerType,
-      })
-      .from(users)
-      .where(sql`${users.id} != ${req.user.id}`)
-      .limit(50);
-
-    res.json(users);
-  });
   // News routes (mock data for now)
   app.get("/api/news", (req, res) => {
     const news = [

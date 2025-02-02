@@ -23,7 +23,6 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { User, MessageSquare, Search, Users } from "lucide-react";
-import type { SelectUser } from "@db/schema";
 
 export default function Navbar() {
   const { user, logoutMutation } = useAuth();
@@ -31,7 +30,7 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [, setLocation] = useLocation();
 
-  const { data: searchResults } = useQuery<SelectUser[]>({
+  const { data: searchResults } = useQuery({
     queryKey: ["/api/users/search", { q: search }],
     enabled: search.length > 0 && open,
   });
@@ -98,9 +97,9 @@ export default function Navbar() {
                     >
                       <div className="flex items-center w-full">
                         <Avatar className="h-10 w-10 mr-3">
-                          <AvatarImage src={result.avatar || undefined} />
+                          <AvatarImage src={result.avatar} />
                           <AvatarFallback>
-                            {result.displayName?.[0]?.toUpperCase() ?? result.username[0].toUpperCase()}
+                            {result.displayName?.[0] ?? result.username[0]}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1">

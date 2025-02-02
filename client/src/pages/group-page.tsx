@@ -18,8 +18,6 @@ import { Badge } from "@/components/ui/badge";
 import { Send, Users, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { SelectGroup, SelectUser } from "@db/schema";
-import { UserSelectDialog } from "@/components/user-select-dialog";
-import { UserPlus } from "lucide-react";
 
 interface GroupMessage {
   id: number;
@@ -84,27 +82,6 @@ export default function GroupPage() {
       setMessageInput("");
     },
   });
-
-    const addMemberMutation = useMutation({
-    mutationFn: async (userId: number) => {
-      await apiRequest("GET", `/api/groups/${id}/add-member?userId=${userId}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/groups/${id}`] });
-      toast({
-        title: "Member added",
-        description: "The user has been added to the group.",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
 
   useEffect(() => {
     if (!user || !id) return;
@@ -223,22 +200,10 @@ export default function GroupPage() {
       {/* Members sidebar */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Members ({group.members.length})
-            </CardTitle>
-             <UserSelectDialog
-                trigger={
-                  <Button size="sm" variant="outline">
-                    <UserPlus className="h-4 w-4 mr-2" />
-                    Add Member
-                  </Button>
-                }
-                onSelect={(user) => addMemberMutation.mutate(user.id)}
-                excludeUserIds={group.members.map(m => m.id)}
-              />
-          </div>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Members ({group.members.length})
+          </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           <ScrollArea className="h-[calc(100vh-16rem)]">
