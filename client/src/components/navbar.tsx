@@ -14,25 +14,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Command,
-  CommandDialog,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import { User, MessageSquare, Search, Users } from "lucide-react";
+import { User } from "lucide-react";
 import debounce from "lodash/debounce";
+import type { SelectUser } from "@db/schema";
 
 export default function Navbar() {
   const { user, logoutMutation } = useAuth();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [open, setOpen] = useState(false);
-  const [location] = useLocation();
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -44,20 +34,17 @@ export default function Navbar() {
     return () => handler.cancel();
   }, [search]);
 
-  const { data: searchResults, isLoading, refetch } = useQuery({
+  const { data: searchResults = [], isLoading } = useQuery<SelectUser[]>({
     queryKey: ["/api/users/search", { q: debouncedSearch }],
-    enabled: debouncedSearch.length > 2 && open,
+    enabled: debouncedSearch.length > 2,
   });
 
   const handleSearchSubmit = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && search.length >= 3) {
       try {
-        const results = await refetch();
-        if (results.data && Array.isArray(results.data) && results.data.length > 0) {
-          // Navigate to the first user's profile
-          setOpen(false);
-          setLocation(`/profile/${results.data[0].id}`);
-          setSearch(''); // Clear search after navigation
+        if (searchResults && searchResults.length > 0) {
+          setLocation(`/profile/${searchResults[0].id}`);
+          setSearch('');
         } else {
           toast({
             title: "No users found",
@@ -74,7 +61,6 @@ export default function Navbar() {
       }
     }
   };
-
 
   return (
     <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -128,22 +114,22 @@ export default function Navbar() {
                 placeholder="Search users... (min. 3 characters)"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                onKeyPress={handleSearchSubmit}
+                onKeyDown={handleSearchSubmit}
               />
-              {searchResults && searchResults.length > 0 && open && (
+              {searchResults.length > 0 && search.length >= 3 && (
                 <div className="absolute top-full mt-2 w-full bg-background border rounded-md shadow-lg z-50">
                   {searchResults.map((result) => (
                     <div
                       key={result.id}
                       className="p-2 hover:bg-muted cursor-pointer"
                       onClick={() => {
-                        setOpen(false);
                         setLocation(`/profile/${result.id}`);
+                        setSearch('');
                       }}
                     >
                       <div className="flex items-center gap-2">
                         <Avatar className="h-8 w-8">
-                          <AvatarImage src={result.avatar} />
+                          <AvatarImage src={result.avatar || undefined} />
                           <AvatarFallback>
                             {result.displayName?.[0] ?? result.username[0]}
                           </AvatarFallback>

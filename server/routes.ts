@@ -99,11 +99,15 @@ export function registerRoutes(app: Express): Server {
       return res.status(400).json({ error: 'Search query must be at least 3 characters' });
     }
 
-    console.log('Search query:', query); // Debug log
-
     try {
       const searchResults = await db
-        .select()
+        .select({
+          id: users.id,
+          username: users.username,
+          displayName: users.displayName,
+          avatar: users.avatar,
+          gamerType: users.gamerType
+        })
         .from(users)
         .where(
           and(
@@ -114,7 +118,6 @@ export function registerRoutes(app: Express): Server {
         .orderBy(desc(users.id))
         .limit(10);
 
-      console.log('Search results:', searchResults); // Debug log
       res.json(searchResults);
     } catch (error) {
       console.error('Search error:', error);
